@@ -26,38 +26,38 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 pt-12 pb-24">
-      <header className="flex items-center gap-6 mb-10">
+    <div className="min-h-screen bg-background p-6 pt-8 pb-24">
+      <header className="flex items-center gap-6 mb-6">
         <button 
           onClick={() => navigate('/home')}
           className="p-3 bg-surface rounded-2xl hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-2xl font-serif font-bold text-cream">Search</h1>
+        <h1 className="text-xl font-serif font-bold text-cream">Search</h1>
       </header>
 
-      <div className="relative mb-10">
+      <div className="relative mb-6">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-cream/40" />
+          <Search className="w-4 h-4 text-cream/40" />
         </div>
         <input 
           autoFocus
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="What are you looking for?"
-          className="w-full pl-12 pr-12 py-5 bg-surface/50 border border-white/5 rounded-3xl focus:border-primary/50 transition-all outline-none text-cream"
+          placeholder="Search products..."
+          className="w-full pl-10 pr-12 py-3.5 bg-surface/50 border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm"
         />
         <div className="absolute inset-y-0 right-4 flex items-center gap-3">
-          <div className="w-px h-6 bg-white/10" />
+          <div className="w-px h-5 bg-white/10" />
           <button className="text-primary hover:scale-110 transition-transform">
-            <Filter className="w-6 h-6" />
+            <Filter className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-8 px-2">
+      <div className="flex items-center justify-between mb-6 px-2">
         <p className="text-cream/50 text-sm">
           {searchTerm ? `Results for "${searchTerm}"` : 'All Products'}
         </p>
@@ -89,21 +89,28 @@ function HorizontalProductCard({ product }: { product: Product, key?: any }) {
       onClick={() => navigate(`/product/${product.id}`)}
       className="bg-surface/30 p-3 rounded-[2.5rem] border border-white/5 flex gap-5 group cursor-pointer hover:border-primary/30 transition-all items-center"
     >
-      <div className="h-32 w-32 rounded-[2rem] overflow-hidden bg-surface flex-shrink-0 border border-white/5 shadow-2xl">
+      <div className="h-28 w-28 rounded-2xl overflow-hidden bg-surface flex-shrink-0 border border-white/5 shadow-xl relative">
         <img 
           src={product.imageUrl} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
           referrerPolicy="no-referrer"
         />
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
+          {product.tags?.slice(0, 1).map((tag, idx) => (
+            <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border backdrop-blur-sm shadow-sm">
+              {tag.text}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="flex-1 min-w-0 pr-2">
-        <h3 className="text-cream font-bold text-xl mb-1 leading-tight truncate">{product.name}</h3>
-        <p className="text-primary font-bold text-lg mb-2">${product.price.toFixed(2)}</p>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-cream font-bold text-lg mb-0.5 leading-tight truncate">{product.name}</h3>
+        <p className="text-primary font-bold text-base mb-1.5">${product.price.toFixed(2)}</p>
         <div className="flex items-center gap-1.5">
-          <Star className="w-4 h-4 text-primary fill-current" />
+          <Star className="w-3.5 h-3.5 text-primary fill-current" />
           <span className="text-primary font-bold text-xs">{product.rating}</span>
-          <span className="text-cream/30 text-xs">({product.reviewsCount})</span>
+          <span className="text-cream/30 text-[10px]">({product.reviewsCount})</span>
         </div>
       </div>
       <button 

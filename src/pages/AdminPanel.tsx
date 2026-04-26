@@ -56,12 +56,16 @@ export default function AdminPanel() {
     category: 'Skincare',
     ingredients: [],
     features: ['Organic', 'Vegan'],
-    size: '50ml, 100ml, 150ml'
+    size: '50ml, 100ml, 150ml',
+    order: 0,
+    tags: []
   });
 
   const [newImageLink, setNewImageLink] = useState('');
   const [newIngredient, setNewIngredient] = useState('');
   const [newFeature, setNewFeature] = useState('');
+  const [newTagText, setNewTagText] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#A4B494');
   const [newCustomKey, setNewCustomKey] = useState('');
   const [newCustomValue, setNewCustomValue] = useState('');
 
@@ -168,6 +172,8 @@ export default function AdminPanel() {
       ingredients: product.ingredients || [],
       features: product.features || [],
       size: product.size || '50ml, 100ml, 150ml',
+      order: product.order || 0,
+      tags: product.tags || [],
       customFields: product.customFields || {}
     });
     setEditingId(product.id);
@@ -188,6 +194,8 @@ export default function AdminPanel() {
       ingredients: [],
       features: ['Organic', 'Vegan'],
       size: '50ml, 100ml, 150ml',
+      order: products.length,
+      tags: [],
       customFields: {}
     });
     setEditingId(null);
@@ -226,6 +234,21 @@ export default function AdminPanel() {
     }
   };
 
+  const addTag = () => {
+    if (newTagText) {
+      setFormData({
+        ...formData,
+        tags: [...(formData.tags || []), { text: newTagText, color: newTagColor }]
+      });
+      setNewTagText('');
+    }
+  };
+
+  const removeTag = (index: number) => {
+    const updated = [...(formData.tags || [])];
+    updated.splice(index, 1);
+    setFormData({ ...formData, tags: updated });
+  };
   const addCustomField = () => {
     if (newCustomKey && newCustomValue) {
       setFormData({
@@ -248,19 +271,19 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24">
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6 sm:mb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 pb-24">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center justify-between w-full sm:w-auto">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => navigate('/home')}
-              className="p-3 bg-surface rounded-2xl hover:bg-white/10 transition-colors"
+              className="p-2.5 bg-surface rounded-2xl hover:bg-white/10 transition-colors"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-xl sm:text-2xl font-serif font-bold text-cream">Admin Panel</h1>
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Secret Dashboard</p>
+              <h1 className="text-xl font-serif font-bold text-cream">Admin Panel</h1>
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest leading-none">Secret Dashboard</p>
             </div>
           </div>
           
@@ -279,19 +302,19 @@ export default function AdminPanel() {
         <div className="flex bg-surface rounded-2xl p-1 shrink-0 overflow-x-auto no-scrollbar scroll-smooth">
           <button 
             onClick={() => setActiveTab('products')}
-            className={`flex-1 px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
+            className={`flex-1 px-4 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'products' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
           >
             Products
           </button>
           <button 
             onClick={() => setActiveTab('hero')}
-            className={`flex-1 px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hero' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
+            className={`flex-1 px-4 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'hero' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
           >
             Banner
           </button>
           <button 
             onClick={() => setActiveTab('categories')}
-            className={`flex-1 px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'categories' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
+            className={`flex-1 px-4 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'categories' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
           >
             Categories
           </button>
@@ -329,7 +352,7 @@ export default function AdminPanel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="bg-surface border border-white/5 rounded-[24px] sm:rounded-[40px] p-4 sm:p-8 mb-6 shadow-2xl relative"
+            className="bg-surface border border-white/5 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 mb-6 shadow-2xl relative"
           >
             {categories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
@@ -460,7 +483,7 @@ export default function AdminPanel() {
                   required
                 />
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <AdminInput 
                     label="Price ($)" 
                     type="number"
@@ -478,7 +501,7 @@ export default function AdminPanel() {
                       <select 
                         value={formData.category}
                         onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full pl-10 pr-10 py-3 bg-background border border-white/5 rounded-xl focus:border-primary/50 transition-all outline-none text-cream appearance-none cursor-pointer font-bold text-sm"
+                        className="w-full pl-10 pr-10 py-2.5 bg-background border border-white/5 rounded-xl focus:border-primary/50 transition-all outline-none text-cream appearance-none cursor-pointer font-bold text-[13px]"
                       >
                         {categories.map(cat => (
                           <option key={cat.id} value={cat.name}>{cat.name}</option>
@@ -489,10 +512,17 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   </div>
+                  <AdminInput 
+                    label="Priority (Order)" 
+                    type="number"
+                    icon={<List className="w-4 h-4" />}
+                    value={formData.order}
+                    onChange={(e: any) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
+                  />
                 </div>
 
                 <AdminInput 
-                  label="Product Video URL (Reel support)" 
+                  label="Product Video URL" 
                   icon={<LinkIcon className="w-4 h-4" />}
                   placeholder="https://..."
                   value={formData.videoUrl}
@@ -500,20 +530,20 @@ export default function AdminPanel() {
                 />
 
                 <AdminInput 
-                  label="Available Sizes (Comma separated)" 
+                  label="Available Sizes" 
                   icon={<Edit2 className="w-4 h-4" />}
-                  placeholder="50ml, 100ml, 150ml"
+                  placeholder="e.g. 50ml, 100ml"
                   value={formData.size}
                   onChange={(e) => setFormData({...formData, size: e.target.value})}
                   required
                 />
 
                 <div>
-                  <label className="block text-xs font-bold text-cream/40 uppercase tracking-widest mb-2">Description</label>
+                  <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest mb-1.5 px-1">Description</label>
                   <textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full p-4 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream min-h-[80px]"
+                    className="w-full p-4 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm min-h-[60px]"
                     required
                   />
                 </div>
@@ -535,6 +565,38 @@ export default function AdminPanel() {
                     value={formData.reviewsCount}
                     onChange={(e: any) => setFormData({...formData, reviewsCount: parseInt(e.target.value) || 0})}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-cream/40 uppercase tracking-widest mb-3">Highlighter Tags (Trending, Offer, etc.)</label>
+                  <div className="flex gap-2 mb-3">
+                    <input 
+                      type="text" 
+                      placeholder="Tag text..."
+                      value={newTagText}
+                      onChange={(e) => setNewTagText(e.target.value)}
+                      className="flex-1 bg-background border border-white/5 rounded-xl px-4 text-cream outline-none focus:border-primary/50 text-sm"
+                    />
+                    <input 
+                      type="color" 
+                      value={newTagColor}
+                      onChange={(e) => setNewTagColor(e.target.value)}
+                      className="w-12 h-10 bg-background border border-white/5 rounded-xl overflow-hidden cursor-pointer"
+                    />
+                    <button type="button" onClick={addTag} className="p-3 bg-surface text-primary rounded-xl">
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags?.map((tag, idx) => (
+                      <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 border">
+                        {tag.text}
+                        <button type="button" onClick={() => removeTag(idx)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -741,26 +803,26 @@ export default function AdminPanel() {
             )}
            </AnimatePresence>
 
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-             {categories.map(cat => (
-               <div key={cat.id} className="bg-surface/30 border border-white/5 rounded-3xl p-4 group relative overflow-hidden">
-                 <div className="aspect-square rounded-2xl mb-4 overflow-hidden bg-surface flex items-center justify-center p-2">
+           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+             {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
+               <div key={cat.id} className="bg-surface/30 border border-white/5 rounded-2xl p-3 group relative overflow-hidden">
+                 <div className="aspect-square rounded-xl mb-3 overflow-hidden bg-surface flex items-center justify-center p-1.5">
                     {cat.imageUrl ? (
                       <img src={cat.imageUrl} className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-700" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-cream/10" />
+                        <ImageIcon className="w-6 h-6 text-cream/10" />
                       </div>
                     )}
                  </div>
                  <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="text-cream font-bold">{cat.name}</h3>
-                      <p className="text-[10px] text-primary uppercase font-bold tracking-widest mt-1">{cat.layoutType}</p>
+                      <h3 className="text-cream font-bold text-xs truncate max-w-[80px]">{cat.name}</h3>
+                      <p className="text-[8px] text-primary uppercase font-bold tracking-widest mt-0.5">{cat.layoutType}</p>
                     </div>
-                    <div className="flex gap-2">
-                       <button onClick={() => handleCategoryEdit(cat)} className="p-2 bg-white/5 rounded-lg text-cream/40 hover:text-primary"><Edit2 className="w-4 h-4" /></button>
-                       <button onClick={() => handleCategoryDelete(cat.id)} className="p-2 bg-white/5 rounded-lg text-cream/40 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
+                    <div className="flex gap-1">
+                       <button onClick={() => handleCategoryEdit(cat)} className="p-1.5 bg-white/5 rounded-lg text-cream/40 hover:text-primary"><Edit2 className="w-3 h-3" /></button>
+                       <button onClick={() => handleCategoryDelete(cat.id)} className="p-1.5 bg-white/5 rounded-lg text-cream/40 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
                     </div>
                  </div>
                </div>
@@ -770,36 +832,36 @@ export default function AdminPanel() {
       )}
 
       {activeTab === 'products' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
-          [1,2,3].map(i => <div key={i} className="h-48 bg-surface/50 rounded-3xl animate-pulse" />)
+          [1,2,3,4].map(i => <div key={i} className="h-40 bg-surface/50 rounded-2xl animate-pulse" />)
         ) : (
-          products.map((product) => (
-            <div key={product.id} className="bg-surface/30 border border-white/5 rounded-3xl p-4 flex gap-4 items-center group">
-              <div className="h-24 w-24 rounded-2xl overflow-hidden flex-shrink-0 bg-background/50">
+          [...products].sort((a, b) => (a.order || 0) - (b.order || 0)).map((product) => (
+            <div key={product.id} className="bg-surface/30 border border-white/5 rounded-2xl p-3 flex gap-3 items-center group relative overflow-hidden">
+              <div className="h-20 w-20 rounded-xl overflow-hidden flex-shrink-0 bg-background/50 border border-white/5">
                 {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-6 h-6 text-cream/10" />
+                    <Package className="w-5 h-5 text-cream/10" />
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-cream font-bold truncate">{product.name}</h3>
-                <p className="text-primary font-bold">${product.price}</p>
-                <div className="flex gap-2 mt-3">
+              <div className="flex-1 min-w-0 pr-1">
+                <h3 className="text-cream font-bold text-sm truncate">{product.name}</h3>
+                <p className="text-primary font-bold text-xs">${product.price}</p>
+                <div className="flex gap-1.5 mt-2">
                   <button 
                     onClick={() => handleEdit(product)}
-                    className="p-2 bg-white/5 rounded-lg text-cream/40 hover:text-primary hover:bg-white/10 transition-all"
+                    className="p-1.5 bg-white/5 rounded-lg text-cream/40 hover:text-primary hover:bg-white/10 transition-all"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button 
                     onClick={() => handleDelete(product.id)}
-                    className="p-2 bg-white/5 rounded-lg text-cream/40 hover:text-red-400 hover:bg-white/10 transition-all"
+                    className="p-1.5 bg-white/5 rounded-lg text-cream/40 hover:text-red-400 hover:bg-white/10 transition-all"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

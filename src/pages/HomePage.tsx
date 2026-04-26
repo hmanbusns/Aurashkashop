@@ -45,9 +45,9 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 overflow-hidden rounded-xl flex items-center justify-center bg-white/5">
             <img src="https://i.ibb.co/vxKFtvqB/20241130-231344.png" className="w-full h-full object-contain" alt="Aurashka Logo" />
@@ -73,20 +73,20 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       </header>
 
       {/* Hero Welcome */}
-      <section className="px-6 py-6 mb-4">
-        <h2 className="text-xl font-light text-cream/40">Good Morning</h2>
-        <h3 className="text-2xl font-bold text-cream mb-6 capitalize">{user?.displayName?.split(' ')[0] || 'Explorer'} 👋</h3>
+      <section className="px-6 py-4 mb-2">
+        <h2 className="text-lg font-light text-cream/40">Good Morning</h2>
+        <h3 className="text-xl font-bold text-cream mb-4 capitalize">{user?.displayName?.split(' ')[0] || 'Explorer'} 👋</h3>
         
         <div className="relative group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-            <Search className="w-5 h-5 text-cream/30" />
+            <Search className="w-4 h-4 text-cream/30" />
           </div>
           <input 
             type="text"
             onClick={() => navigate('/search')}
             readOnly
             placeholder="Search natural products..."
-            className="w-full pl-12 pr-12 py-4 bg-surface/50 border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream cursor-pointer"
+            className="w-full pl-10 pr-12 py-3 bg-surface/50 border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm cursor-pointer"
           />
           <button className="absolute inset-y-0 right-4 flex items-center text-primary">
             <div className="bg-primary/10 p-2 rounded-lg">
@@ -97,8 +97,8 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       </section>
 
       {/* Main Banner */}
-      <section className="px-6 mb-10">
-        <div className="relative h-72 w-full rounded-[40px] overflow-hidden group">
+      <section className="px-6 mb-6">
+        <div className="relative h-60 w-full rounded-[32px] overflow-hidden group">
           <img 
             src={banner?.imageUrl || "https://images.unsplash.com/photo-1547721065-85669931cc43?auto=format&fit=crop&q=80&w=2070"} 
             alt="nature" 
@@ -123,9 +123,9 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       </section>
 
       {/* Categories Chips */}
-      <section className="px-6 mb-10 overflow-x-auto no-scrollbar">
+      <section className="px-6 mb-6 overflow-x-auto no-scrollbar">
         <div className="flex gap-6 pb-2">
-          {categories.map((cat) => (
+          {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
             <button 
               key={cat.id}
               onClick={() => navigate(`/search?category=${encodeURIComponent(cat.name)}`)}
@@ -165,12 +165,14 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       </section>
 
       {/* Dynamic Category Sections */}
-      <div className="space-y-16">
-        {categories.map((cat) => (
+      <div className="space-y-10">
+        {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
           <CategorySection 
             key={cat.id} 
             category={cat} 
-            products={products.filter(p => p.category === cat.name)}
+            products={products
+              .filter(p => p.category === cat.name)
+              .sort((a, b) => (a.order || 0) - (b.order || 0))}
             onProductClick={(id) => navigate(`/product/${id}`)}
           />
         ))}
@@ -199,8 +201,8 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
 
   return (
     <section className="px-6">
-      <div className="flex items-center justify-between mb-6">
-        <h5 className="text-2xl font-serif font-bold text-cream">{category.id === 'best-sellers' ? 'Best Sellers' : category.name}</h5>
+      <div className="flex items-center justify-between mb-4">
+        <h5 className="text-xl font-serif font-bold text-cream">{category.id === 'best-sellers' ? 'Best Sellers' : category.name}</h5>
         <button className="text-primary text-xs font-bold uppercase tracking-widest hover:underline">View All</button>
       </div>
 
@@ -238,7 +240,14 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                  )
                )}
                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-8">
-                  <h4 className="text-white font-bold text-2xl mb-1">{p.name}</h4>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {p.tags?.map((tag, idx) => (
+                      <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border">
+                        {tag.text}
+                      </span>
+                    ))}
+                  </div>
+                  <h4 className="text-white font-bold text-xl mb-1">{p.name}</h4>
                   <p className="text-primary font-bold text-lg">${p.price.toFixed(2)}</p>
                </div>
             </motion.div>
@@ -262,6 +271,13 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center p-8">
+                 <div className="flex flex-wrap gap-2 mb-2">
+                    {p.tags?.map((tag, idx) => (
+                      <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border">
+                        {tag.text}
+                      </span>
+                    ))}
+                  </div>
                  <h4 className="text-white font-bold text-xl mb-1">{p.name}</h4>
                  <p className="text-primary font-bold text-lg">${p.price.toFixed(2)}</p>
               </div>
@@ -280,7 +296,7 @@ function ProductCard({ product, onClick }: { key?: string; product: Product; onC
       onClick={onClick}
       className="flex flex-col group cursor-pointer"
     >
-      <div className="relative aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden mb-4 bg-surface/50 border border-white/5">
+      <div className="relative aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden mb-3 bg-surface/50 border border-white/5">
         {product.imageUrl ? (
           <img 
             src={product.imageUrl} 
@@ -293,11 +309,18 @@ function ProductCard({ product, onClick }: { key?: string; product: Product; onC
             <LayoutGrid className="w-8 h-8 text-cream/10" />
           </div>
         )}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+          {product.tags?.map((tag, idx) => (
+            <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border backdrop-blur-sm self-start">
+              {tag.text}
+            </span>
+          ))}
+        </div>
         <button 
           onClick={(e) => { e.stopPropagation(); }}
-          className="absolute top-4 right-4 p-2.5 bg-background/40 backdrop-blur-md rounded-full text-white hover:text-red-500 transition-colors"
+          className="absolute top-4 right-4 p-2 bg-background/40 backdrop-blur-md rounded-full text-white hover:text-red-500 transition-colors"
         >
-          <Heart className="w-4 h-4" />
+          <Heart className="w-3.5 h-3.5" />
         </button>
       </div>
       <div className="px-2">

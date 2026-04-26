@@ -30,7 +30,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+      <header className="p-4 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-surface rounded-full">
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -38,9 +38,9 @@ export default function CategoriesPage() {
         <div className="w-10" />
       </header>
 
-      <div className="px-6 grid grid-cols-2 gap-6 mt-4">
+      <div className="px-6 grid grid-cols-2 gap-4 mt-2">
         {loading ? (
-          [1,2,3,4].map(i => <div key={i} className="h-64 bg-surface/50 rounded-[40px] animate-pulse" />)
+          [1,2,3,4].map(i => <div key={i} className="h-48 bg-surface/50 rounded-[32px] animate-pulse" />)
         ) : (
           categories.map((cat, idx) => (
             <motion.div 
@@ -49,7 +49,7 @@ export default function CategoriesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => navigate(`/search?category=${encodeURIComponent(cat.name)}`)}
-              className="relative h-72 rounded-[48px] overflow-hidden group cursor-pointer border border-white/10 shadow-2xl bg-surface"
+              className="relative h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-white/10 shadow-xl bg-surface"
             >
               {cat.imageUrl ? (
                 <img 

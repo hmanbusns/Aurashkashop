@@ -41,12 +41,14 @@ export default function ImageUploader({ onImageSelected, currentImage }: ImageUp
     setImageUrl(val);
     if (!val) {
       setIsValidImage(true);
+      setError('');
       onImageSelected('');
       return;
     }
     
     if (validateUrl(val)) {
       setIsValidImage(true);
+      setError('');
       onImageSelected(val);
     } else {
       setIsValidImage(false);

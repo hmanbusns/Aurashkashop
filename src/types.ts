@@ -12,6 +12,8 @@ export interface Product {
   ingredients?: string[];
   features?: string[];
   size?: string;
+  order?: number;
+  tags?: { text: string; color: string }[];
   customFields?: Record<string, string>;
   createdAt: number;
 }

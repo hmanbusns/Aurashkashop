@@ -44,7 +44,7 @@ export default function ProductDetailsPage() {
   return (
     <div className="min-h-screen bg-background pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <button 
           onClick={() => navigate(-1)}
           className="p-2 text-cream hover:text-primary transition-colors"
@@ -57,9 +57,9 @@ export default function ProductDetailsPage() {
         </button>
       </header>
 
-      <div className="px-6 space-y-8">
+      <div className="px-6 space-y-6">
         {/* Product Image */}
-        <div className="relative aspect-[4/5] w-full rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl">
+        <div className="relative aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
           <AnimatePresence mode="wait">
             <motion.img 
               key={activeImage}
@@ -91,28 +91,35 @@ export default function ProductDetailsPage() {
         </div>
 
         {/* Product Info */}
-        <div className="space-y-4">
-          <h1 className="text-3xl font-serif font-bold text-cream leading-tight">{product.name}</h1>
-          <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-[#F5B546] fill-current" />
-            <span className="text-cream font-bold">{product.rating}</span>
-            <span className="text-cream/40 text-sm">({product.reviewsCount} Reviews)</span>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {product.tags?.map((tag, idx) => (
+              <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border">
+                {tag.text}
+              </span>
+            ))}
           </div>
-          <div className="text-3xl font-bold text-cream">${product.price.toFixed(2)}</div>
-          <p className="text-cream/60 leading-relaxed text-sm">
+          <h1 className="text-2xl font-serif font-bold text-cream leading-tight">{product.name}</h1>
+          <div className="flex items-center gap-2">
+            <Star className="w-3.5 h-3.5 text-[#F5B546] fill-current" />
+            <span className="text-cream font-bold text-sm">{product.rating}</span>
+            <span className="text-cream/40 text-xs">({product.reviewsCount} Reviews)</span>
+          </div>
+          <div className="text-2xl font-bold text-cream">${product.price.toFixed(2)}</div>
+          <p className="text-cream/60 leading-relaxed text-xs">
             {product.description}
           </p>
         </div>
 
         {/* Size Selection */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-bold text-cream/80">Size</h4>
-          <div className="flex gap-3">
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold text-cream/80 tracking-widest uppercase">Size</h4>
+          <div className="flex gap-2">
             {sizes.map(size => (
               <button 
                 key={size}
                 onClick={() => setSelectedSize(size)}
-                className={`min-w-[70px] px-4 py-3 rounded-2xl border font-bold text-xs transition-all ${
+                className={`min-w-[60px] px-3 py-2 rounded-xl border font-bold text-[10px] transition-all uppercase tracking-widest ${
                   selectedSize === size 
                     ? 'bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(164,180,148,0.3)]' 
                     : 'bg-surface border-white/5 text-cream/40'
@@ -125,32 +132,32 @@ export default function ProductDetailsPage() {
         </div>
 
         {/* Quantity Selection */}
-        <div className="flex items-center justify-between py-2">
-          <h4 className="text-sm font-bold text-cream/80">Quantity</h4>
-          <div className="flex items-center gap-4 bg-surface rounded-2xl p-1 border border-white/5">
+        <div className="flex items-center justify-between py-1">
+          <h4 className="text-xs font-bold text-cream/80 tracking-widest uppercase">Quantity</h4>
+          <div className="flex items-center gap-3 bg-surface rounded-xl p-1 border border-white/5">
             <button 
               onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              className="p-2.5 hover:bg-white/5 rounded-xl transition-colors"
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
             >
-              <Minus className="w-4 h-4 text-primary" />
+              <Minus className="w-3.5 h-3.5 text-primary" />
             </button>
-            <span className="text-base font-bold w-6 text-center text-cream">{quantity}</span>
+            <span className="text-sm font-bold w-4 text-center text-cream">{quantity}</span>
             <button 
               onClick={() => setQuantity(q => q + 1)}
-              className="p-2.5 hover:bg-white/5 rounded-xl transition-colors"
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
             >
-              <Plus className="w-4 h-4 text-primary" />
+              <Plus className="w-3.5 h-3.5 text-primary" />
             </button>
           </div>
         </div>
 
         {/* Custom Fields */}
         {product.customFields && Object.keys(product.customFields).length > 0 && (
-          <div className="space-y-3 pt-4">
+          <div className="space-y-1 pt-2">
             {Object.entries(product.customFields).map(([key, val]) => (
-              <div key={key} className="flex justify-between items-center py-4 border-b border-white/5">
-                 <span className="text-xs font-bold text-cream/40 uppercase tracking-widest">{key}</span>
-                 <span className="text-sm font-bold text-primary">{val}</span>
+              <div key={key} className="flex justify-between items-center py-2.5 border-b border-white/5">
+                 <span className="text-[10px] font-bold text-cream/40 uppercase tracking-[0.15em]">{key}</span>
+                 <span className="text-xs font-bold text-primary">{val}</span>
               </div>
             ))}
           </div>
