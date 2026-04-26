@@ -49,8 +49,8 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-            <LayoutGrid className="w-6 h-6 text-primary" />
+          <div className="w-10 h-10 overflow-hidden rounded-xl flex items-center justify-center bg-white/5">
+            <img src="https://i.ibb.co/vxKFtvqB/20241130-231344.png" className="w-full h-full object-contain" alt="Aurashka Logo" />
           </div>
           <h1 className="text-xl font-serif text-primary uppercase tracking-widest font-bold">Aurashka</h1>
         </div>
@@ -139,11 +139,13 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
                 }}
               >
                 {cat.imageUrl ? (
-                  <img 
-                    src={cat.imageUrl} 
-                    className="w-full h-full object-contain p-1" 
-                    alt={cat.name} 
-                  />
+                  <div className="w-full h-full flex items-center justify-center p-1.5">
+                    <img 
+                      src={cat.imageUrl} 
+                      className="max-w-full max-h-full object-contain" 
+                      alt={cat.name} 
+                    />
+                  </div>
                 ) : (
                   <LayoutGrid className="text-cream/10" style={{ width: '50%', height: '50%' }} />
                 )}

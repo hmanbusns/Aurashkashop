@@ -6,7 +6,6 @@ import { AuthService } from './services/authService';
 import { UserProfile, AuthStatus } from './types';
 
 // Pages
-import SplashPage from './pages/SplashPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
@@ -28,18 +27,34 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const profile = await AuthService.getUserProfile(firebaseUser.uid);
-        setUser(profile);
-        setAuthStatus('authenticated');
-      } else {
-        setUser(null);
+      try {
+        if (firebaseUser) {
+          const profile = await AuthService.getUserProfile(firebaseUser.uid);
+          setUser(profile);
+          setAuthStatus('authenticated');
+        } else {
+          setUser(null);
+          setAuthStatus('unauthenticated');
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
         setAuthStatus('unauthenticated');
       }
     });
 
-    return () => unsubscribe();
-  }, []);
+    // Timeout for safety - if auth doesn't respond in 5s, assume unauthenticated
+    const timeout = setTimeout(() => {
+      if (authStatus === 'loading') {
+        console.warn("Auth initialization timed out");
+        setAuthStatus('unauthenticated');
+      }
+    }, 10000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [authStatus]);
 
   if (authStatus === 'loading') {
     return (
@@ -52,7 +67,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SplashPage />} />
+        <Route path="/" element={<Navigate to="/home" />} />
         <Route 
           path="/login" 
           element={authStatus === 'authenticated' ? <Navigate to="/home" /> : <LoginPage />} 

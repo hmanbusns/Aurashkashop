@@ -62,8 +62,10 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center text-center mb-12"
       >
-        <Leaf className="w-10 h-10 text-primary mb-4" />
-        <h1 className="text-3xl font-serif text-primary uppercase tracking-widest mb-2">Aurashka</h1>
+        <div className="w-20 h-20 mb-6 bg-white/5 rounded-3xl p-4 flex items-center justify-center overflow-hidden">
+          <img src="https://i.ibb.co/vxKFtvqB/20241130-231344.png" className="w-full h-full object-contain" alt="Aurashka Logo" />
+        </div>
+        <h1 className="text-3xl font-serif text-primary uppercase tracking-widest mb-2 font-bold italic">Aurashka</h1>
         <h2 className="text-2xl font-medium text-cream mb-2">Welcome Back</h2>
         <p className="text-cream/60">Sign in to continue your natural beauty journey</p>
       </motion.div>

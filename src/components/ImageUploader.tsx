@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Link as LinkIcon, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, Link as LinkIcon, X, Check, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import { ImageUploadService } from '../services/imageService';
 
 interface ImageUploaderProps {
@@ -10,6 +10,7 @@ interface ImageUploaderProps {
 export default function ImageUploader({ onImageSelected, currentImage }: ImageUploaderProps) {
   const [uploadMode, setUploadMode] = useState<'file' | 'link'>('file');
   const [imageUrl, setImageUrl] = useState(currentImage || '');
+  const [isValidImage, setIsValidImage] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -19,6 +20,7 @@ export default function ImageUploader({ onImageSelected, currentImage }: ImageUp
     if (!file) return;
 
     setIsUploading(true);
+    setIsValidImage(true);
     setError('');
     try {
       const url = await ImageUploadService.uploadToImgBB(file);
@@ -28,6 +30,26 @@ export default function ImageUploader({ onImageSelected, currentImage }: ImageUp
       setError('Upload failed. Try again or use a link.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const validateUrl = (url: string) => {
+    return url.startsWith('http') && (url.includes('.jpg') || url.includes('.png') || url.includes('.webp') || url.includes('.jpeg') || url.includes('images.unsplash.com') || url.includes('i.ibb.co'));
+  };
+
+  const handleLinkChange = (val: string) => {
+    setImageUrl(val);
+    if (!val) {
+      setIsValidImage(true);
+      onImageSelected('');
+      return;
+    }
+    
+    if (validateUrl(val)) {
+      setIsValidImage(true);
+      onImageSelected(val);
+    } else {
+      setIsValidImage(false);
     }
   };
 
@@ -65,8 +87,13 @@ export default function ImageUploader({ onImageSelected, currentImage }: ImageUp
           onClick={() => fileInputRef.current?.click()}
           className="relative aspect-video rounded-2xl border-2 border-dashed border-white/10 bg-surface/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-all overflow-hidden"
         >
-          {imageUrl ? (
-            <img src={imageUrl} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
+          {imageUrl && isValidImage ? (
+            <img 
+              src={imageUrl} 
+              alt="preview" 
+              className="absolute inset-0 w-full h-full object-cover" 
+              onError={() => setIsValidImage(false)}
+            />
           ) : (
             <>
               {isUploading ? (
@@ -94,21 +121,29 @@ export default function ImageUploader({ onImageSelected, currentImage }: ImageUp
               type="url"
               placeholder="Paste Image URL directly"
               value={imageUrl}
-              onChange={(e) => {
-                setImageUrl(e.target.value);
-                onImageSelected(e.target.value);
-              }}
+              onChange={(e) => handleLinkChange(e.target.value)}
               className="w-full pl-4 pr-12 py-4 bg-surface/50 border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm"
             />
-            {imageUrl && (
+            {imageUrl && isValidImage && (
               <div className="absolute inset-y-0 right-4 flex items-center">
                 <Check className="w-5 h-5 text-primary" />
               </div>
             )}
           </div>
-          {imageUrl && (
+          {imageUrl && isValidImage && (
             <div className="aspect-video rounded-2xl bg-surface/30 border border-white/5 overflow-hidden">
-               <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
+               <img 
+                src={imageUrl} 
+                alt="preview" 
+                className="w-full h-full object-cover" 
+                onError={() => setIsValidImage(false)}
+              />
+            </div>
+          )}
+          {!isValidImage && imageUrl && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-500">
+              <AlertCircle className="w-5 h-5" />
+              <p className="text-xs font-bold">Invalid image URL or image not found</p>
             </div>
           )}
         </div>

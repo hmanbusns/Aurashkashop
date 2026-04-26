@@ -326,10 +326,10 @@ export default function AdminPanel() {
       <AnimatePresence>
         {isAdding && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-surface border border-white/5 rounded-[32px] sm:rounded-[40px] p-4 sm:p-8 mb-6 overflow-hidden shadow-2xl relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="bg-surface border border-white/5 rounded-[24px] sm:rounded-[40px] p-4 sm:p-8 mb-6 shadow-2xl relative"
           >
             {categories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
@@ -654,9 +654,9 @@ export default function AdminPanel() {
            <AnimatePresence>
             {isAddingCategory && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="bg-surface/50 border border-white/5 rounded-[32px] sm:rounded-[40px] p-4 sm:p-8 mb-6"
               >
                 <div className="flex items-center justify-between mb-6">
@@ -744,9 +744,9 @@ export default function AdminPanel() {
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
              {categories.map(cat => (
                <div key={cat.id} className="bg-surface/30 border border-white/5 rounded-3xl p-4 group relative overflow-hidden">
-                 <div className="aspect-square rounded-2xl mb-4 overflow-hidden bg-surface">
+                 <div className="aspect-square rounded-2xl mb-4 overflow-hidden bg-surface flex items-center justify-center p-2">
                     {cat.imageUrl ? (
-                      <img src={cat.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <img src={cat.imageUrl} className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-700" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ImageIcon className="w-8 h-8 text-cream/10" />
@@ -830,14 +830,14 @@ function AdminInput({ label, icon, ...props }: any) {
 
   return (
     <div className="w-full">
-      <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest mb-1.5 px-1">{label}</label>
+      <label className="block text-[10px] font-bold text-cream/30 uppercase tracking-widest mb-1 px-1">{label}</label>
       <div className="relative">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-primary">
           {icon}
         </div>
         <input 
           {...safeProps}
-          className="w-full pl-10 pr-4 py-2.5 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm"
+          className="w-full pl-10 pr-4 py-2 bg-background border border-white/5 rounded-xl focus:border-primary/50 transition-all outline-none text-cream text-sm"
         />
       </div>
     </div>
