@@ -3,33 +3,56 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, ShoppingCart, User as UserIcon, Heart, Home, Grid, 
-  Filter, LogOut, Settings, LayoutGrid 
+  Filter, LogOut, Settings, LayoutGrid, Star 
 } from 'lucide-react';
-import { UserProfile, Product, BannerConfig, Category } from '../types';
+import { UserProfile, Product, BannerConfig, Category, HomeSection } from '../types';
 import { DatabaseService } from '../services/databaseService';
 import { AuthService } from '../services/authService';
+import { formatCurrency } from '../lib/format';
 
 export default function HomePage({ user }: { user: UserProfile | null }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
   const [banner, setBanner] = useState<BannerConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
-      const [prodData, bannerData, catData] = await Promise.all([
+      const [prodData, bannerData, catData, homeData] = await Promise.all([
         DatabaseService.getProducts(),
         DatabaseService.getBannerConfig(),
-        DatabaseService.getCategories()
+        DatabaseService.getCategories(),
+        DatabaseService.getHomeSections()
       ]);
       setProducts(prodData);
       setBanner(bannerData);
       setCategories(catData);
+      setHomeSections(homeData);
+
+      if (user) {
+        const w = await DatabaseService.getWishlist(user.uid);
+        setWishlist(w);
+      }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [user]);
+
+  const toggleWishlist = async (productId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const added = await DatabaseService.toggleWishlist(user.uid, productId);
+    if (added) {
+      setWishlist(prev => [...prev, productId]);
+    } else {
+      setWishlist(prev => prev.filter(id => id !== productId));
+    }
+  };
 
   const handleLogout = async () => {
     await AuthService.logout();
@@ -54,19 +77,17 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
           </div>
           <h1 className="text-xl font-serif text-primary uppercase tracking-widest font-bold">Aurashka</h1>
         </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/cart')}
-            className="p-2 bg-surface text-cream/70 rounded-full hover:bg-white/10 transition-colors"
-          >
-            <ShoppingCart className="w-5 h-5" />
-          </button>
+        <div className="flex items-center gap-2">
           <div className="group relative">
             <button 
               onClick={() => navigate('/profile')}
-              className="p-2 bg-surface text-cream/70 rounded-full hover:bg-white/10 transition-colors"
+              className="w-10 h-10 bg-surface text-primary rounded-full hover:bg-white/10 transition-all flex items-center justify-center font-serif font-bold text-sm shadow-sm"
             >
-              <UserIcon className="w-5 h-5" />
+              {user?.displayName ? (
+                user.displayName[0].toUpperCase()
+              ) : (
+                <UserIcon className="w-5 h-5 text-cream/70" />
+              )}
             </button>
           </div>
         </div>
@@ -164,18 +185,46 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
         </div>
       </section>
 
-      {/* Dynamic Category Sections */}
+      {/* Dynamic Sections */}
       <div className="space-y-10">
-        {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
-          <CategorySection 
-            key={cat.id} 
-            category={cat} 
-            products={products
-              .filter(p => p.category === cat.name)
-              .sort((a, b) => (a.order || 0) - (b.order || 0))}
-            onProductClick={(id) => navigate(`/product/${id}`)}
-          />
-        ))}
+        {homeSections.length > 0 ? (
+          homeSections.map(section => {
+            let sectionProducts: Product[] = [];
+            if (section.dataSource === 'all') {
+              sectionProducts = [...products];
+            } else if (section.dataSource === 'category') {
+              sectionProducts = products.filter(p => p.category === section.categoryId);
+            } else if (section.dataSource === 'products' && section.productIds) {
+              sectionProducts = section.productIds
+                .map(id => products.find(p => p.id === id))
+                .filter((p): p is Product => !!p);
+            }
+
+            return (
+              <ManualSection 
+                key={section.id} 
+                section={section} 
+                products={sectionProducts}
+                onProductClick={(id) => navigate(`/product/${id}`)}
+                wishlist={wishlist}
+                onToggleWishlist={toggleWishlist}
+              />
+            );
+          })
+        ) : (
+          [...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
+            <CategorySection 
+              key={cat.id} 
+              category={cat} 
+              products={products
+                .filter(p => p.category === cat.name)
+                .sort((a, b) => (a.order || 0) - (b.order || 0))}
+              onProductClick={(id) => navigate(`/product/${id}`)}
+              wishlist={wishlist}
+              onToggleWishlist={toggleWishlist}
+            />
+          ))
+        )}
 
         {!loading && categories.length === 0 && (
           <div className="px-6 py-20 text-center">
@@ -196,7 +245,146 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
   );
 }
 
-function CategorySection({ category, products, onProductClick }: { key?: string; category: Category; products: Product[]; onProductClick: (id: string) => void }) {
+function ManualSection({ 
+  section, 
+  products, 
+  onProductClick,
+  wishlist,
+  onToggleWishlist
+}: { 
+  key?: string,
+  section: HomeSection, 
+  products: Product[],
+  onProductClick: (id: string) => void | Promise<void>,
+  wishlist: string[],
+  onToggleWishlist: (id: string) => void | Promise<void>
+}) {
+  if (products.length === 0) return null;
+
+  if (section.layoutType === 'reel') {
+    return (
+      <section className="px-6 relative">
+        <div className="flex justify-between items-end mb-6">
+          <div>
+            <h3 className="text-xl font-serif text-cream font-bold leading-tight">{section.title}</h3>
+            <div className="h-1 w-12 bg-primary mt-2 rounded-full" />
+          </div>
+        </div>
+        
+        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6">
+          {products.map((p) => (
+            <motion.div 
+              key={p.id}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onProductClick(p.id)}
+              className="relative min-w-[160px] h-72 rounded-[32px] overflow-hidden group border border-white/5"
+            >
+              <img 
+                src={p.imageUrl} 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                alt={p.name}
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+              
+              <button 
+                onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+              </button>
+
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="flex gap-0.5 mb-1.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-2 h-2 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
+                    ))}
+                  </div>
+                  <h4 className="text-white font-bold text-sm mb-1 line-clamp-1">{p.name}</h4>
+                  <p className="text-primary font-bold text-base">{formatCurrency(p.price)}</p>
+               </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (section.layoutType === 'banner') {
+    return (
+      <section className="px-6">
+        <div className="flex justify-between items-end mb-6">
+          <div>
+            <h3 className="text-xl font-serif text-cream font-bold leading-tight">{section.title}</h3>
+            <div className="h-1 w-12 bg-primary mt-2 rounded-full" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {products.map((p) => (
+            <div 
+              key={p.id}
+              onClick={() => onProductClick(p.id)}
+              className="relative h-48 w-full rounded-[32px] overflow-hidden group border border-white/5"
+            >
+              <img 
+                src={p.imageUrl} 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                alt={p.name}
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent p-8 flex flex-col justify-center">
+                 <div className="flex gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
+                    ))}
+                  </div>
+                 <h4 className="text-white font-bold text-xl mb-1">{p.name}</h4>
+                 <p className="text-primary font-bold text-lg">{formatCurrency(p.price)}</p>
+              </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                className={`absolute top-6 right-6 p-2.5 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+              >
+                <Heart className={`w-4 h-4 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="px-6">
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <h3 className="text-xl font-serif text-cream font-bold leading-tight">{section.title}</h3>
+          <div className="h-1 w-12 bg-primary mt-2 rounded-full" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} onClick={() => onProductClick(p.id)} isWishlisted={wishlist.includes(p.id)} onToggleWishlist={() => onToggleWishlist(p.id)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CategorySection({ 
+  category, 
+  products, 
+  onProductClick,
+  wishlist,
+  onToggleWishlist
+}: { 
+  key?: string,
+  category: Category, 
+  products: Product[],
+  onProductClick: (id: string) => void | Promise<void>,
+  wishlist: string[],
+  onToggleWishlist: (id: string) => void | Promise<void>
+}) {
   if (products.length === 0) return null;
 
   return (
@@ -208,7 +396,15 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
 
       {category.layoutType === 'grid' && (
         <div className="grid grid-cols-2 gap-4">
-          {products.map(p => <ProductCard key={p.id} product={p} onClick={() => onProductClick(p.id)} />)}
+          {products.map(p => (
+            <ProductCard 
+              key={p.id} 
+              product={p} 
+              onClick={() => onProductClick(p.id)}
+              isWishlisted={wishlist.includes(p.id)}
+              onToggleWishlist={() => onToggleWishlist(p.id)}
+            />
+          ))}
         </div>
       )}
 
@@ -239,6 +435,15 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                    </div>
                  )
                )}
+               <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  onToggleWishlist(p.id);
+                }}
+                className={`absolute top-6 right-6 p-3 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+               >
+                <Heart className={`w-5 h-5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+               </button>
                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-8">
                   <div className="flex flex-wrap gap-2 mb-2">
                     {p.tags?.map((tag, idx) => (
@@ -248,7 +453,7 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                     ))}
                   </div>
                   <h4 className="text-white font-bold text-xl mb-1">{p.name}</h4>
-                  <p className="text-primary font-bold text-lg">${p.price.toFixed(2)}</p>
+                  <p className="text-primary font-bold text-lg">{formatCurrency(p.price)}</p>
                </div>
             </motion.div>
           ))}
@@ -270,6 +475,15 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                    <Grid className="w-8 h-8 text-cream/10" />
                 </div>
               )}
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  onToggleWishlist(p.id);
+                }}
+                className={`absolute top-6 right-6 p-2.5 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+               >
+                <Heart className={`w-4 h-4 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+               </button>
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center p-8">
                  <div className="flex flex-wrap gap-2 mb-2">
                     {p.tags?.map((tag, idx) => (
@@ -279,7 +493,7 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
                     ))}
                   </div>
                  <h4 className="text-white font-bold text-xl mb-1">{p.name}</h4>
-                 <p className="text-primary font-bold text-lg">${p.price.toFixed(2)}</p>
+                 <p className="text-primary font-bold text-lg">{formatCurrency(p.price)}</p>
               </div>
             </div>
           ))}
@@ -289,7 +503,7 @@ function CategorySection({ category, products, onProductClick }: { key?: string;
   );
 }
 
-function ProductCard({ product, onClick }: { key?: string; product: Product; onClick: () => void }) {
+function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key?: string; product: Product; onClick: () => void; isWishlisted: boolean; onToggleWishlist: () => void }) {
   return (
     <motion.div 
       whileHover={{ y: -5 }}
@@ -317,15 +531,18 @@ function ProductCard({ product, onClick }: { key?: string; product: Product; onC
           ))}
         </div>
         <button 
-          onClick={(e) => { e.stopPropagation(); }}
-          className="absolute top-4 right-4 p-2 bg-background/40 backdrop-blur-md rounded-full text-white hover:text-red-500 transition-colors"
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onToggleWishlist();
+          }}
+          className={`absolute top-4 right-4 p-2 bg-background/40 backdrop-blur-md rounded-full transition-colors ${isWishlisted ? 'text-red-500' : 'text-white hover:text-red-500'}`}
         >
-          <Heart className="w-3.5 h-3.5" />
+          <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-current' : ''}`} />
         </button>
       </div>
       <div className="px-2">
         <h6 className="text-cream text-base font-bold truncate mb-1 leading-tight">{product.name}</h6>
-        <p className="text-primary font-bold text-lg">${product.price.toFixed(2)}</p>
+        <p className="text-primary font-bold text-lg">{formatCurrency(product.price)}</p>
       </div>
     </motion.div>
   );

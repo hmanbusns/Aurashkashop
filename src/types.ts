@@ -51,3 +51,22 @@ export interface UserProfile {
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+
+export interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+  createdAt: number;
+}
+
+export interface HomeSection {
+  id: string;
+  title: string;
+  layoutType: 'grid' | 'reel' | 'banner';
+  dataSource: 'category' | 'products' | 'all';
+  categoryId?: string; // If dataSource is 'category'
+  productIds?: string[]; // If dataSource is 'products'
+  order: number;
+}

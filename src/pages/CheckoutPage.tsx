@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ChevronRight, MapPin, CreditCard, ChevronDown, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { formatCurrency } from '../lib/format';
 
 type Step = 'shipping' | 'payment' | 'review' | 'success';
 
@@ -101,7 +102,7 @@ function ShippingForm({ onNext }: { onNext: () => void }) {
             <span className="text-cream font-bold">Express Shipping</span>
             <span className="text-xs text-cream/40">1-2 Business Days</span>
           </div>
-          <p className="text-primary font-bold">$4.99</p>
+          <p className="text-primary font-bold">{formatCurrency(299)}</p>
         </button>
       </div>
 
@@ -196,7 +197,7 @@ function ReviewOrder({ onNext }: { onNext: () => void }) {
         </div>
         <div className="flex justify-between text-cream/60">
           <span>Subtotal</span>
-          <span className="font-bold text-cream">$58.35</span>
+          <span className="font-bold text-cream">{formatCurrency(4500)}</span>
         </div>
         <div className="flex justify-between text-cream/60">
           <span>Shipping</span>
@@ -204,11 +205,11 @@ function ReviewOrder({ onNext }: { onNext: () => void }) {
         </div>
         <div className="flex justify-between text-cream/60">
           <span>Tax</span>
-          <span className="font-bold text-cream">$5.25</span>
+          <span className="font-bold text-cream">{formatCurrency(810)}</span>
         </div>
         <div className="pt-4 border-t border-white/10 flex justify-between items-center">
           <span className="text-xl text-cream">Total</span>
-          <span className="text-2xl font-bold text-primary">$63.60</span>
+          <span className="text-2xl font-bold text-primary">{formatCurrency(5310)}</span>
         </div>
       </div>
 
@@ -259,7 +260,7 @@ function SuccessView({ onHome }: { onHome: () => void }) {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-cream/60">3 Items</span>
-            <span className="text-cream">$83.85</span>
+            <span className="text-cream">{formatCurrency(5310)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-cream/60">Shipping</span>
@@ -267,7 +268,7 @@ function SuccessView({ onHome }: { onHome: () => void }) {
           </div>
           <div className="flex justify-between text-lg font-bold">
             <span className="text-cream">Total Paid</span>
-            <span className="text-primary">$63.60</span>
+            <span className="text-primary">{formatCurrency(5310)}</span>
           </div>
         </div>
       </div>

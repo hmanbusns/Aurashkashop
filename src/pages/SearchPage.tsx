@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Search, ArrowLeft, Filter, ShoppingCart, Heart, Star } from 'lucide-react';
 import { Product } from '../types';
 import { DatabaseService } from '../services/databaseService';
+import { formatCurrency } from '../lib/format';
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -106,19 +107,13 @@ function HorizontalProductCard({ product }: { product: Product, key?: any }) {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="text-cream font-bold text-lg mb-0.5 leading-tight truncate">{product.name}</h3>
-        <p className="text-primary font-bold text-base mb-1.5">${product.price.toFixed(2)}</p>
+        <p className="text-primary font-bold text-base mb-1.5">{formatCurrency(product.price)}</p>
         <div className="flex items-center gap-1.5">
           <Star className="w-3.5 h-3.5 text-primary fill-current" />
           <span className="text-primary font-bold text-xs">{product.rating}</span>
           <span className="text-cream/30 text-[10px]">({product.reviewsCount})</span>
         </div>
       </div>
-      <button 
-        onClick={(e) => { e.stopPropagation(); }}
-        className="p-4 text-cream/20 hover:text-primary transition-all pr-6"
-      >
-        <Heart className="w-6 h-6" />
-      </button>
     </motion.div>
   );
 }

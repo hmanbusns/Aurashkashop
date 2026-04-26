@@ -1,17 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Trash2, Heart, ShoppingBag, Plus, Home, Grid, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Trash2, Heart, ShoppingBag, Plus, Home, Grid, User as UserIcon, ShoppingCart } from 'lucide-react';
+import { DatabaseService } from '../services/databaseService';
+import { auth } from '../lib/firebase';
+import { Product } from '../types';
+import { formatCurrency } from '../lib/format';
 
 export default function WishlistPage() {
   const navigate = useNavigate();
-  // Mock wishlist items
-  const items = [
-    { id: '1', name: 'Scalp Serum', price: 21.95, image: 'https://images.unsplash.com/photo-1601049541289-9b1b7abcfe19?auto=format&fit=crop&q=80&w=2070' },
-    { id: '2', name: 'Herbal Conditioner', price: 15.45, image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d00c?auto=format&fit=crop&q=80&w=2070' },
-    { id: '3', name: 'Body Lotion', price: 13.95, image: 'https://images.unsplash.com/photo-1552693673-1bf958298935?auto=format&fit=crop&q=80&w=2070' },
-    { id: '4', name: 'Aromatherapy Oil', price: 17.95, image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=1974' },
-  ];
+  const [items, setItems] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const user = auth.currentUser;
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      const wishlistIds = await DatabaseService.getWishlist(user.uid);
+      if (wishlistIds.length > 0) {
+        const allProducts = await DatabaseService.getProducts();
+        const wishlisted = allProducts.filter(p => wishlistIds.includes(p.id));
+        setItems(wishlisted);
+      } else {
+        setItems([]);
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const removeItem = async (productId: string) => {
+    const user = auth.currentUser;
+    if (user) {
+      await DatabaseService.toggleWishlist(user.uid, productId);
+      setItems(prev => prev.filter(item => item.id !== productId));
+    }
+  };
+
+  const handleAddToCart = async (product: Product) => {
+    const user = auth.currentUser;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const sizes = product.size?.split(',').map(s => s.trim()) || ['Standard'];
+    await DatabaseService.addToCart(user.uid, product.id, 1, sizes[0]);
+    navigate('/cart');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -20,7 +66,12 @@ export default function WishlistPage() {
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="text-xl font-serif font-bold text-cream">Wishlist</h1>
-        <div className="w-10" />
+        <button 
+          onClick={() => navigate('/cart')}
+          className="p-2 hover:bg-surface rounded-full relative"
+        >
+          <ShoppingCart className="w-6 h-6 text-primary" />
+        </button>
       </header>
 
       <div className="px-6 space-y-4">
@@ -30,23 +81,34 @@ export default function WishlistPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="bg-surface/30 border border-white/5 rounded-[32px] p-4 flex gap-4"
+            className="bg-surface/30 border border-white/5 rounded-2xl p-3 flex gap-3"
           >
-            <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-surface">
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            <div 
+              className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+              onClick={() => navigate(`/product/${item.id}`)}
+            >
+              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
             </div>
-            <div className="flex-1 flex flex-col justify-between py-1">
+            <div className="flex-1 flex flex-col justify-between py-0.5">
               <div className="flex justify-between items-start">
-                <h3 className="text-cream font-medium truncate pr-2">{item.name}</h3>
-                <button className="text-primary">
-                  <Heart className="w-4 h-4 fill-current" />
+                <h3 
+                  className="text-cream text-sm font-medium truncate pr-2 cursor-pointer"
+                  onClick={() => navigate(`/product/${item.id}`)}
+                >
+                  {item.name}
+                </h3>
+                <button 
+                  onClick={() => removeItem(item.id)}
+                  className="text-primary hover:text-red-500 transition-colors"
+                >
+                  <Heart className="w-3.5 h-3.5 fill-current" />
                 </button>
               </div>
               <div className="flex justify-between items-center">
-                <p className="text-primary font-bold text-lg">${item.price.toFixed(2)}</p>
+                <p className="text-primary font-bold text-base">{formatCurrency(item.price)}</p>
                 <button 
-                  onClick={() => navigate('/cart')}
-                  className="bg-primary/20 text-primary px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-background transition-all"
+                  onClick={() => handleAddToCart(item)}
+                  className="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-background transition-all"
                 >
                   Add to Cart
                 </button>
