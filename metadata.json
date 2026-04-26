@@ -1,0 +1,6 @@
+{
+  "name": "Aurashka - Natural Beauty",
+  "description": "Premium natural skincare and beauty products rooted in nature and crafted for you.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Authentication", "Realtime Database", "Image Upload"]
+}

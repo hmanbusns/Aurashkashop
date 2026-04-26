@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6B7D3F;
+  --color-secondary: #8B9D6F;
+  --color-accent: #C7D4B6;
+  --color-background: #0D110D;
+  --color-surface: #1A1F1A;
+  --color-cream: #F5F5F0;
+  
+  --font-serif: "Playfair Display", "Georgia", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-cream);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.aurashka-gradient {
+  background: linear-gradient(180deg, rgba(13, 17, 13, 0) 0%, #0D110D 100%);
+}
+
+.glass-card {
+  background: rgba(26, 31, 26, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
