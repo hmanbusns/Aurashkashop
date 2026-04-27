@@ -185,7 +185,7 @@ export default function ProfilePage({ user: initialUser }: { user: UserProfile |
         </div>
 
         {user?.address ? (
-          <div className="space-y-3">
+          <div className="space-y-3 fix-glitch">
              <div className="bg-primary/5 border border-primary/20 p-5 rounded-3xl relative">
                 <div className="absolute top-4 right-4 flex items-center gap-2">
                   <span className="bg-primary text-background text-[7px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest">Selected</span>
@@ -232,7 +232,7 @@ export default function ProfilePage({ user: initialUser }: { user: UserProfile |
         {user?.role === 'admin' && (
           <button 
             onClick={() => navigate('/admin')}
-            className="w-full bg-primary/10 border border-primary/20 p-5 rounded-3xl flex items-center justify-between group hover:bg-primary/20 transition-all mb-4"
+            className="w-full bg-primary/10 border border-primary/20 p-5 rounded-3xl flex items-center justify-between group hover:bg-primary/20 transition-all mb-4 fix-glitch"
           >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary text-background rounded-2xl">
