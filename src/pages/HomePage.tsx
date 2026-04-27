@@ -193,7 +193,10 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
             if (section.dataSource === 'all') {
               sectionProducts = [...products];
             } else if (section.dataSource === 'category') {
-              sectionProducts = products.filter(p => p.category === section.categoryId);
+              sectionProducts = products.filter(p => {
+                if (Array.isArray(p.categories)) return p.categories.includes(section.categoryId || '');
+                return p.category === section.categoryId;
+              });
             } else if (section.dataSource === 'products' && section.productIds) {
               sectionProducts = section.productIds
                 .map(id => products.find(p => p.id === id))
@@ -217,7 +220,10 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
               key={cat.id} 
               category={cat} 
               products={products
-                .filter(p => p.category === cat.name)
+                .filter(p => {
+                  if (Array.isArray(p.categories)) return p.categories.includes(cat.name);
+                  return p.category === cat.name;
+                })
                 .sort((a, b) => (a.order || 0) - (b.order || 0))}
               onProductClick={(id) => navigate(`/product/${id}`)}
               wishlist={wishlist}

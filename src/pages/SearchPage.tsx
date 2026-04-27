@@ -21,10 +21,19 @@ export default function SearchPage() {
     load();
   }, []);
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesName = p.name.toLowerCase().includes(searchLower);
+    
+    let matchesCategory = false;
+    if (Array.isArray(p.categories)) {
+      matchesCategory = p.categories.some(cat => cat.toLowerCase().includes(searchLower));
+    } else if (p.category) {
+      matchesCategory = p.category.toLowerCase().includes(searchLower);
+    }
+
+    return matchesName || matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-background p-6 pt-8 pb-24">

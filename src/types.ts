@@ -8,7 +8,8 @@ export interface Product {
   imageUrl: string;
   additionalImages?: string[];
   videoUrl?: string;
-  category: string;
+  category: string | string[]; // Compatibility for single category, but moving to multiple
+  categories?: string[]; // Array of categories
   ingredients?: string[];
   features?: string[];
   size?: string;

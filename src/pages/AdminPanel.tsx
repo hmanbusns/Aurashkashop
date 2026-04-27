@@ -78,6 +78,7 @@ export default function AdminPanel() {
     additionalImages: [],
     videoUrl: '',
     category: 'Skincare',
+    categories: [],
     ingredients: [],
     features: ['Organic', 'Vegan'],
     size: '50ml, 100ml, 150ml',
@@ -204,7 +205,8 @@ export default function AdminPanel() {
       size: product.size || '50ml, 100ml, 150ml',
       order: product.order || 0,
       tags: product.tags || [],
-      customFields: product.customFields || {}
+      customFields: product.customFields || {},
+      categories: Array.isArray(product.categories) ? product.categories : (product.category ? [product.category] : [])
     });
     setEditingId(product.id);
     setIsAdding(true);
@@ -221,6 +223,7 @@ export default function AdminPanel() {
       additionalImages: [],
       videoUrl: '',
       category: categories[0]?.name || 'Skincare',
+      categories: [categories[0]?.name].filter(Boolean) as string[],
       ingredients: [],
       features: ['Organic', 'Vegan'],
       size: '50ml, 100ml, 150ml',
@@ -611,24 +614,33 @@ export default function AdminPanel() {
                     onChange={(e: any) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
                     required
                   />
-                  <div>
-                    <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest mb-1.5 px-1">Category</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-primary z-10">
-                        <Tag className="w-4 h-4" />
-                      </div>
-                      <select 
-                        value={formData.category}
-                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full pl-10 pr-10 py-2.5 bg-background border border-white/5 rounded-xl focus:border-primary/50 transition-all outline-none text-cream appearance-none cursor-pointer font-bold text-[13px]"
-                      >
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.name}>{cat.name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-cream/20">
-                        <List className="w-4 h-4" />
-                      </div>
+                  <div className="lg:col-span-2">
+                    <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest mb-1.5 px-1">Categories (Select Multiple)</label>
+                    <div className="flex flex-wrap gap-2 p-3 bg-background border border-white/5 rounded-2xl min-h-[48px]">
+                      {categories.map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            const current = formData.categories || [];
+                            const updated = current.includes(cat.name) 
+                              ? current.filter(c => c !== cat.name)
+                              : [...current, cat.name];
+                            setFormData({ 
+                              ...formData, 
+                              categories: updated,
+                              category: updated[0] || '' // Fallback for single category field
+                            });
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                            (formData.categories || []).includes(cat.name)
+                              ? 'bg-primary text-background border-primary'
+                              : 'bg-surface border-white/5 text-cream/30 hover:border-white/10'
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <AdminInput 

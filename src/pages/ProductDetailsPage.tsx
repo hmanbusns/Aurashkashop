@@ -43,7 +43,11 @@ export default function ProductDetailsPage() {
           // Load Recommendations
           const allProducts = await DatabaseService.getProducts();
           const recommended = allProducts
-            .filter(p => p.category === data.category && p.id !== id)
+            .filter(p => {
+              const pCats = Array.isArray(p.categories) ? p.categories : [p.category].filter(Boolean);
+              const currentCats = Array.isArray(data.categories) ? data.categories : [data.category].filter(Boolean);
+              return pCats.some(cat => currentCats.includes(cat)) && p.id !== id;
+            })
             .sort((a, b) => (b.rating || 0) - (a.rating || 0))
             .slice(0, 4);
           setRecommendedProducts(recommended);
@@ -146,6 +150,12 @@ export default function ProductDetailsPage() {
         {/* Product Info */}
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
+            {/* Show Categories as Tags */}
+            {(Array.isArray(product.categories) ? product.categories : [product.category]).filter(Boolean).map((cat, idx) => (
+              <span key={`cat-${idx}`} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-primary text-background">
+                {cat}
+              </span>
+            ))}
             {product.tags?.map((tag, idx) => (
               <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border">
                 {tag.text}

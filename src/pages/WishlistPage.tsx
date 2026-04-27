@@ -11,6 +11,7 @@ export default function WishlistPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -19,7 +20,14 @@ export default function WishlistPage() {
         navigate('/login');
         return;
       }
-      const wishlistIds = await DatabaseService.getWishlist(user.uid);
+      const [wishlistIds, cartItems] = await Promise.all([
+        DatabaseService.getWishlist(user.uid),
+        DatabaseService.getCart(user.uid)
+      ]);
+
+      const cartTotal = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+      setCartCount(cartTotal);
+
       if (wishlistIds.length > 0) {
         const allProducts = await DatabaseService.getProducts();
         const wishlisted = allProducts.filter(p => wishlistIds.includes(p.id));
@@ -71,6 +79,11 @@ export default function WishlistPage() {
           className="p-2 hover:bg-surface rounded-full relative"
         >
           <ShoppingCart className="w-6 h-6 text-primary" />
+          {cartCount > 0 && (
+            <span className="absolute top-0 right-0 bg-primary text-background text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-background">
+              {cartCount}
+            </span>
+          )}
         </button>
       </header>
 

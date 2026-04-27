@@ -25,7 +25,10 @@ export default function CategoriesPage() {
   }, []);
 
   const getProductCount = (categoryName: string) => {
-    return products.filter(p => p.category === categoryName).length;
+    return products.filter(p => {
+      if (Array.isArray(p.categories)) return p.categories.includes(categoryName);
+      return p.category === categoryName;
+    }).length;
   };
 
   return (
