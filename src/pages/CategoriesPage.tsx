@@ -32,18 +32,18 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <header className="p-4 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-surface rounded-full">
-          <ArrowLeft className="w-6 h-6" />
+    <div className="min-h-screen bg-background pb-20">
+      <header className="p-3 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-surface rounded-full">
+          <ArrowLeft className="w-5 h-5 font-bold" />
         </button>
-        <h1 className="text-xl font-serif font-bold text-cream">Categories</h1>
-        <div className="w-10" />
+        <h1 className="text-lg font-serif font-bold text-cream">Categories</h1>
+        <div className="w-8" />
       </header>
 
-      <div className="px-6 grid grid-cols-2 gap-4 mt-2">
+      <div className="px-4 grid grid-cols-2 gap-3 mt-1">
         {loading ? (
-          [1,2,3,4].map(i => <div key={i} className="h-48 bg-surface/50 rounded-[32px] animate-pulse" />)
+          [1,2,3,4].map(i => <div key={i} className="h-40 bg-surface/50 rounded-[24px] animate-pulse" />)
         ) : (
           categories.map((cat, idx) => (
             <motion.div 
@@ -52,7 +52,7 @@ export default function CategoriesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => navigate(`/search?category=${encodeURIComponent(cat.name)}`)}
-              className="relative h-56 rounded-[32px] overflow-hidden group cursor-pointer border border-white/10 shadow-xl bg-surface"
+              className="relative h-48 rounded-[24px] overflow-hidden group cursor-pointer border border-white/10 shadow-xl bg-surface"
             >
               {cat.imageUrl ? (
                 <img 
@@ -62,12 +62,12 @@ export default function CategoriesPage() {
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Grid className="w-8 h-8 text-cream/10" />
+                  <Grid className="w-6 h-6 text-cream/10" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent p-6 flex flex-col justify-end items-center text-center">
-                <h3 className="text-cream font-bold text-lg mb-1">{cat.name}</h3>
-                <p className="text-primary text-[10px] font-bold uppercase tracking-widest">{getProductCount(cat.name)} Items</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent p-4 flex flex-col justify-end items-center text-center">
+                <h3 className="text-cream font-bold text-base mb-0.5">{cat.name}</h3>
+                <p className="text-primary text-[9px] font-bold uppercase tracking-widest">{getProductCount(cat.name)} Items</p>
               </div>
             </motion.div>
           ))
@@ -75,11 +75,11 @@ export default function CategoriesPage() {
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between mx-4 mb-4 rounded-[32px] shadow-2xl">
-        <NavIcon icon={<Home className="w-6 h-6" />} onClick={() => navigate('/home')} />
-        <NavIcon icon={<Grid className="w-6 h-6" />} active />
-        <NavIcon icon={<Heart className="w-6 h-6" />} onClick={() => navigate('/wishlist')} />
-        <NavIcon icon={<UserIcon className="w-6 h-6" />} onClick={() => navigate('/profile')} />
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+        <NavIcon icon={<Home className="w-5 h-5" />} onClick={() => navigate('/home')} />
+        <NavIcon icon={<Grid className="w-5 h-5" />} active />
+        <NavIcon icon={<Heart className="w-5 h-5" />} onClick={() => navigate('/wishlist')} />
+        <NavIcon icon={<UserIcon className="w-5 h-5" />} onClick={() => navigate('/profile')} />
       </nav>
     </div>
   );
@@ -89,7 +89,7 @@ function NavIcon({ icon, active, onClick }: { icon: any, active?: boolean, onCli
   return (
     <button 
       onClick={onClick}
-      className={`p-3 rounded-2xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
+      className={`p-2.5 rounded-xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
     >
       {icon}
     </button>

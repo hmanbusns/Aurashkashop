@@ -41,6 +41,17 @@ export interface BannerConfig {
   externalLink?: string;
 }
 
+export interface Address {
+  fullName: string;
+  phone: string;
+  email: string;
+  street: string;
+  city: string;
+  district: string;
+  state: string;
+  pincode: string;
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -49,6 +60,7 @@ export interface UserProfile {
   role: 'user' | 'admin';
   createdAt: number;
   avatarUrl?: string;
+  address?: Address;
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';

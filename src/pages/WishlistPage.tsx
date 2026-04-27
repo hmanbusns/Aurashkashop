@@ -147,11 +147,11 @@ export default function WishlistPage() {
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between mx-4 mb-4 rounded-[32px] shadow-2xl">
-        <NavIcon icon={<Home className="w-6 h-6" />} onClick={() => navigate('/home')} />
-        <NavIcon icon={<Grid className="w-6 h-6" />} onClick={() => navigate('/categories')} />
-        <NavIcon icon={<Heart className="w-6 h-6" />} active />
-        <NavIcon icon={<UserIcon className="w-6 h-6" />} onClick={() => navigate('/profile')} />
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+        <NavIcon icon={<Home className="w-5 h-5" />} onClick={() => navigate('/home')} />
+        <NavIcon icon={<Grid className="w-5 h-5" />} onClick={() => navigate('/categories')} />
+        <NavIcon icon={<Heart className="w-5 h-5" />} active />
+        <NavIcon icon={<UserIcon className="w-5 h-5" />} onClick={() => navigate('/profile')} />
       </nav>
     </div>
   );
@@ -161,7 +161,7 @@ function NavIcon({ icon, active, onClick }: { icon: any, active?: boolean, onCli
   return (
     <button 
       onClick={onClick}
-      className={`p-3 rounded-2xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
+      className={`p-2.5 rounded-xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
     >
       {icon}
     </button>

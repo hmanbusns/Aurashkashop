@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
@@ -8,8 +8,11 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { AuthService } from '../services/authService';
+import { LocationPicker } from '../components/LocationPicker';
 
-export default function ProfilePage({ user }: { user: UserProfile | null }) {
+export default function ProfilePage({ user: initialUser }: { user: UserProfile | null }) {
+  const [user, setUser] = useState<UserProfile | null>(initialUser);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,7 +22,12 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
 
   const menuItems = [
     { icon: <ShoppingBag className="w-5 h-5" />, label: 'My Orders', path: '/orders' },
-    { icon: <MapPin className="w-5 h-5" />, label: 'My Addresses', path: '/addresses' },
+    { 
+      icon: <MapPin className="w-5 h-5" />, 
+      label: 'My Address', 
+      isAction: true,
+      onClick: () => setShowLocationPicker(true)
+    },
     { icon: <CreditCard className="w-5 h-5" />, label: 'Payment Methods', path: '/payment' },
     { icon: <Heart className="w-5 h-5" />, label: 'Wishlist', path: '/wishlist' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', path: '/settings' },
@@ -39,7 +47,7 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
         <div className="w-10" /> {/* Spacer */}
       </header>
 
-      <div className="px-6 flex flex-col items-center mb-10">
+      <div className="px-6 flex flex-col items-center mb-6">
         <div className="relative mb-4">
           <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-primary/20 shadow-xl bg-surface flex items-center justify-center">
             {user?.displayName ? (
@@ -60,6 +68,23 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
         <p className="text-primary text-sm font-medium">{user?.email || 'Sign in to sync your data'}</p>
       </div>
 
+      {user?.address && (
+        <div className="px-6 mb-8">
+          <div className="bg-surface/30 border border-white/5 p-5 rounded-3xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-1 px-2 border border-primary/20 bg-primary/5 rounded-lg">
+                <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em]">Current Delivery Address</span>
+              </div>
+            </div>
+            <p className="text-cream text-sm font-medium mb-1">{user.address.street}</p>
+            <p className="text-cream/50 text-[11px] leading-relaxed">
+              {user.address.city}, {user.address.district}<br/>
+              {user.address.state} - {user.address.pincode}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="px-6 space-y-3">
         {user?.role === 'admin' && (
           <button 
@@ -79,10 +104,14 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
           </button>
         )}
 
-        {menuItems.map((item, idx) => (
+        {menuItems.map((item: any, idx) => (
           <button 
             key={idx}
-            onClick={() => user ? navigate(item.path) : navigate('/login')}
+            onClick={() => {
+              if (!user) return navigate('/login');
+              if (item.isAction) item.onClick();
+              else navigate(item.path);
+            }}
             className="w-full bg-surface/30 border border-white/5 p-5 rounded-3xl flex items-center justify-between group hover:bg-surface/50 transition-all"
           >
             <div className="flex items-center gap-4">
@@ -123,12 +152,24 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
         )}
       </div>
 
+      {/* Location Picker Modal */}
+      {user && (
+        <LocationPicker 
+          isOpen={showLocationPicker} 
+          user={user} 
+          onClose={() => setShowLocationPicker(false)}
+          onSuccess={(updatedProfile) => {
+            setUser(updatedProfile);
+          }}
+        />
+      )}
+
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between mx-4 mb-4 rounded-[32px] shadow-2xl">
-        <NavIcon icon={<Home className="w-6 h-6" />} onClick={() => navigate('/home')} />
-        <NavIcon icon={<Grid className="w-6 h-6" />} onClick={() => navigate('/categories')} />
-        <NavIcon icon={<Heart className="w-6 h-6" />} onClick={() => navigate('/wishlist')} />
-        <NavIcon icon={<UserIcon className="w-6 h-6" />} active />
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+        <NavIcon icon={<Home className="w-5 h-5" />} onClick={() => navigate('/home')} />
+        <NavIcon icon={<Grid className="w-5 h-5" />} onClick={() => navigate('/categories')} />
+        <NavIcon icon={<Heart className="w-5 h-5" />} onClick={() => navigate('/wishlist')} />
+        <NavIcon icon={<UserIcon className="w-5 h-5" />} active />
       </nav>
     </div>
   );
@@ -138,7 +179,7 @@ function NavIcon({ icon, active, onClick }: { icon: any, active?: boolean, onCli
   return (
     <button 
       onClick={onClick}
-      className={`p-3 rounded-2xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
+      className={`p-2.5 rounded-xl transition-all ${active ? 'bg-primary text-background shadow-lg shadow-primary/20' : 'text-cream/30 hover:text-primary'}`}
     >
       {icon}
     </button>

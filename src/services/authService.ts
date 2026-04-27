@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, update } from 'firebase/database';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -43,6 +43,12 @@ export const AuthService = {
       return snapshot.val() as UserProfile;
     }
     return null;
+  },
+
+  async updateUserProfile(uid: string, updates: Partial<UserProfile>) {
+    const userRef = ref(db, `users/${uid}`);
+    await update(userRef, updates);
+    return this.getUserProfile(uid);
   },
 
   onAuthSync(callback: (user: User | null) => void) {
