@@ -22,7 +22,7 @@ export default function CartPage() {
     async function load() {
       const user = auth.currentUser;
       if (!user) {
-        navigate('/login');
+        setLoading(false);
         return;
       }
       const cartData = await DatabaseService.getCart(user.uid);
@@ -130,7 +130,13 @@ export default function CartPage() {
           ))}
         </AnimatePresence>
 
-        {items.length === 0 && (
+        {!auth.currentUser ? (
+          <div className="py-20 text-center">
+            <ShoppingCart className="w-16 h-16 text-cream/10 mx-auto mb-4" />
+            <p className="text-cream/40 px-10 mb-8">Login to view your items and start your natural beauty journey!</p>
+            <button onClick={() => navigate('/login')} className="px-8 py-3 bg-primary text-background font-bold rounded-full">Sign In</button>
+          </div>
+        ) : items.length === 0 && (
           <div className="py-20 text-center">
             <ShoppingCart className="w-16 h-16 text-cream/10 mx-auto mb-4" />
             <p className="text-cream/40 px-10">Your cart is empty. Explore our products and find something you love!</p>

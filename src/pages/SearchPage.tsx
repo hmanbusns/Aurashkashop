@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Search, ArrowLeft, Filter, ShoppingCart, Heart, Star } from 'lucide-react';
 import { Product } from '../types';
@@ -11,6 +11,15 @@ export default function SearchPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cat = params.get('category');
+    if (cat) {
+      setSearchTerm(cat);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     async function load() {

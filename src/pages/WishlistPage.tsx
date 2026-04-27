@@ -17,7 +17,7 @@ export default function WishlistPage() {
     async function load() {
       const user = auth.currentUser;
       if (!user) {
-        navigate('/login');
+        setLoading(false);
         return;
       }
       const [wishlistIds, cartItems] = await Promise.all([
@@ -88,49 +88,57 @@ export default function WishlistPage() {
       </header>
 
       <div className="px-6 space-y-4">
-        {items.map((item, idx) => (
-          <motion.div 
-            key={item.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="bg-surface/30 border border-white/5 rounded-2xl p-3 flex gap-3"
-          >
-            <div 
-              className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
-              onClick={() => navigate(`/product/${item.id}`)}
+        {!auth.currentUser ? (
+          <div className="py-20 text-center">
+            <Heart className="w-16 h-16 text-cream/10 mx-auto mb-4" />
+            <p className="text-cream/40 px-10 mb-8">Sign in to save and view your favorite items!</p>
+            <button onClick={() => navigate('/login')} className="px-8 py-3 bg-primary text-background font-bold rounded-full">Sign In</button>
+          </div>
+        ) : (
+          items.map((item, idx) => (
+            <motion.div 
+              key={item.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-surface/30 border border-white/5 rounded-2xl p-3 flex gap-3"
             >
-              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 flex flex-col justify-between py-0.5">
-              <div className="flex justify-between items-start">
-                <h3 
-                  className="text-cream text-sm font-medium truncate pr-2 cursor-pointer"
-                  onClick={() => navigate(`/product/${item.id}`)}
-                >
-                  {item.name}
-                </h3>
-                <button 
-                  onClick={() => removeItem(item.id)}
-                  className="text-primary hover:text-red-500 transition-colors"
-                >
-                  <Heart className="w-3.5 h-3.5 fill-current" />
-                </button>
+              <div 
+                className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+                onClick={() => navigate(`/product/${item.id}`)}
+              >
+                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
               </div>
-              <div className="flex justify-between items-center">
-                <p className="text-primary font-bold text-base">{formatCurrency(item.price)}</p>
-                <button 
-                  onClick={() => handleAddToCart(item)}
-                  className="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-background transition-all"
-                >
-                  Add to Cart
-                </button>
+              <div className="flex-1 flex flex-col justify-between py-0.5">
+                <div className="flex justify-between items-start">
+                  <h3 
+                    className="text-cream text-sm font-medium truncate pr-2 cursor-pointer"
+                    onClick={() => navigate(`/product/${item.id}`)}
+                  >
+                    {item.name}
+                  </h3>
+                  <button 
+                    onClick={() => removeItem(item.id)}
+                    className="text-primary hover:text-red-500 transition-colors"
+                  >
+                    <Heart className="w-3.5 h-3.5 fill-current" />
+                  </button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-primary font-bold text-base">{formatCurrency(item.price)}</p>
+                  <button 
+                    onClick={() => handleAddToCart(item)}
+                    className="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-background transition-all"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))
+        )}
 
-        {items.length === 0 && (
+        {auth.currentUser && items.length === 0 && (
           <div className="py-20 text-center">
             <Heart className="w-16 h-16 text-cream/10 mx-auto mb-4" />
             <p className="text-cream/40 px-10">Your wishlist is empty. Start saving your favorite botanical products!</p>

@@ -17,6 +17,7 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
   const [banner, setBanner] = useState<BannerConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,8 +34,13 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
       setHomeSections(homeData);
 
       if (user) {
-        const w = await DatabaseService.getWishlist(user.uid);
+        const [w, cartItems] = await Promise.all([
+          DatabaseService.getWishlist(user.uid),
+          DatabaseService.getCart(user.uid)
+        ]);
         setWishlist(w);
+        const total = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+        setCartCount(total);
       }
       setLoading(false);
     }
@@ -78,6 +84,17 @@ export default function HomePage({ user }: { user: UserProfile | null }) {
           <h1 className="text-xl font-serif text-primary uppercase tracking-widest font-bold">Aurashka</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => user ? navigate('/cart') : navigate('/login')}
+            className="p-2 hover:bg-surface rounded-full relative"
+          >
+            <ShoppingCart className="w-5 h-5 text-primary" />
+            {cartCount > 0 && (
+              <span className="absolute top-0 right-0 bg-primary text-background text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-background">
+                {cartCount}
+              </span>
+            )}
+          </button>
           <div className="group relative">
             <button 
               onClick={() => navigate('/profile')}

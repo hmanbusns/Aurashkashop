@@ -83,31 +83,31 @@ export default function App() {
         />
         <Route 
           path="/home" 
-          element={authStatus === 'authenticated' ? <HomePage user={user} /> : <Navigate to="/login" />} 
+          element={<HomePage user={user} />} 
         />
         <Route 
           path="/search" 
-          element={authStatus === 'authenticated' ? <SearchPage /> : <Navigate to="/login" />} 
+          element={<SearchPage />} 
         />
         <Route 
           path="/profile" 
-          element={authStatus === 'authenticated' ? <ProfilePage user={user} /> : <Navigate to="/login" />} 
+          element={<ProfilePage user={user} />} 
         />
         <Route 
           path="/categories" 
-          element={authStatus === 'authenticated' ? <CategoriesPage /> : <Navigate to="/login" />} 
+          element={<CategoriesPage />} 
         />
         <Route 
           path="/product/:id" 
-          element={authStatus === 'authenticated' ? <ProductDetailsPage /> : <Navigate to="/login" />} 
+          element={<ProductDetailsPage />} 
         />
         <Route 
           path="/cart" 
-          element={authStatus === 'authenticated' ? <CartPage /> : <Navigate to="/login" />} 
+          element={<CartPage />} 
         />
         <Route 
           path="/wishlist" 
-          element={authStatus === 'authenticated' ? <WishlistPage /> : <Navigate to="/login" />} 
+          element={<WishlistPage />} 
         />
         <Route 
           path="/checkout" 
@@ -119,11 +119,11 @@ export default function App() {
         />
         <Route 
           path="/about" 
-          element={authStatus === 'authenticated' ? <AboutUsPage /> : <Navigate to="/login" />} 
+          element={<AboutUsPage />} 
         />
         <Route 
           path="/contact" 
-          element={authStatus === 'authenticated' ? <ContactUsPage /> : <Navigate to="/login" />} 
+          element={<ContactUsPage />} 
         />
         <Route 
           path="/admin" 

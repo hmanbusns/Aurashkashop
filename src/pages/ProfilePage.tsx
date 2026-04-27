@@ -50,12 +50,14 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
               <UserIcon className="w-12 h-12 text-cream/20" />
             )}
           </div>
-          <button className="absolute bottom-0 right-0 p-2 bg-primary text-background rounded-full shadow-lg">
-            <Settings className="w-4 h-4" />
-          </button>
+          {user && (
+            <button className="absolute bottom-0 right-0 p-2 bg-primary text-background rounded-full shadow-lg">
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        <h2 className="text-2xl font-bold text-cream mb-1">{user?.displayName}</h2>
-        <p className="text-primary text-sm font-medium">{user?.email}</p>
+        <h2 className="text-2xl font-bold text-cream mb-1">{user?.displayName || 'Hello, Guest'}</h2>
+        <p className="text-primary text-sm font-medium">{user?.email || 'Sign in to sync your data'}</p>
       </div>
 
       <div className="px-6 space-y-3">
@@ -80,7 +82,7 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
         {menuItems.map((item, idx) => (
           <button 
             key={idx}
-            onClick={() => navigate(item.path)}
+            onClick={() => user ? navigate(item.path) : navigate('/login')}
             className="w-full bg-surface/30 border border-white/5 p-5 rounded-3xl flex items-center justify-between group hover:bg-surface/50 transition-all"
           >
             <div className="flex items-center gap-4">
@@ -93,17 +95,32 @@ export default function ProfilePage({ user }: { user: UserProfile | null }) {
           </button>
         ))}
 
-        <button 
-          onClick={handleLogout}
-          className="w-full bg-red-500/5 border border-red-500/10 p-5 rounded-3xl flex items-center justify-between group hover:bg-red-500/10 transition-all mt-6"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-red-500/10 text-red-400 rounded-2xl">
-              <LogOut className="w-5 h-5" />
+        {user ? (
+          <button 
+            onClick={handleLogout}
+            className="w-full bg-red-500/5 border border-red-500/10 p-5 rounded-3xl flex items-center justify-between group hover:bg-red-500/10 transition-all mt-6"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-red-500/10 text-red-400 rounded-2xl">
+                <LogOut className="w-5 h-5" />
+              </div>
+              <span className="text-red-400 font-medium">Log Out</span>
             </div>
-            <span className="text-red-400 font-medium">Log Out</span>
-          </div>
-        </button>
+          </button>
+        ) : (
+          <button 
+            onClick={() => navigate('/login')}
+            className="w-full bg-primary/10 border border-primary/20 p-5 rounded-3xl flex items-center justify-between group hover:bg-primary/20 transition-all mt-6"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary text-background rounded-2xl">
+                <UserIcon className="w-5 h-5" />
+              </div>
+              <span className="text-primary font-bold">Log In / Sign Up</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
+          </button>
+        )}
       </div>
 
       {/* Bottom Nav */}
