@@ -74,3 +74,29 @@
   will-change: transform;
 }
 
+.product-description-content span, .product-description-preview span {
+  display: inline;
+}
+
+.product-description-content img, .product-description-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+.product-description-content hr, .product-description-preview hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 1.5rem 0;
+}
+
+.product-description-content b, .product-description-preview b {
+  font-weight: bold;
+}
+
+.product-description-content i, .product-description-preview i {
+  font-style: italic;
+}
+

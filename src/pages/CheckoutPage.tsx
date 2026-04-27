@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ChevronRight, MapPin, CreditCard, ChevronDown, CheckCircle2, ShoppingBag, Edit2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
-import { UserProfile, Address, CartItem } from '../types';
+import { UserProfile, Address, CartItem, Product, GlobalProductSettings } from '../types';
 import { DatabaseService } from '../services/databaseService';
 import { LocationPicker } from '../components/LocationPicker';
 
@@ -12,18 +12,55 @@ type Step = 'shipping' | 'payment' | 'review' | 'success';
 export default function CheckoutPage({ user }: { user: UserProfile | null }) {
   const [step, setStep] = useState<Step>('shipping');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [products, setProducts] = useState<Record<string, Product>>({});
+  const [globalSettings, setGlobalSettings] = useState<GlobalProductSettings | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      DatabaseService.getCart(user.uid).then(setCartItems);
+    async function load() {
+      const settings = await DatabaseService.getGlobalSettings();
+      setGlobalSettings(settings);
+
+      if (user) {
+        const cart = await DatabaseService.getCart(user.uid);
+        setCartItems(cart);
+        
+        // Fetch full product data for each item to get local overrides
+        const productMap: Record<string, Product> = {};
+        for (const item of cart) {
+          const p = await DatabaseService.getProduct(item.productId);
+          if (p) productMap[p.id] = p;
+        }
+        setProducts(productMap);
+      }
     }
+    load();
   }, [user]);
 
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.18;
-  const total = subtotal + tax;
+  // Calculations
+  const calculatedData = cartItems.reduce((acc, item) => {
+    const p = products[item.productId];
+    if (!p) return acc;
+
+    const discount = p.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+    const itemPrice = p.price * (1 - discount / 100);
+    const itemSubtotal = itemPrice * item.quantity;
+    
+    const taxRate = p.taxRate ?? globalSettings?.defaultTaxRate ?? 0;
+    const itemTax = itemSubtotal * (taxRate / 100);
+    
+    const shipping = p.shippingCharge ?? globalSettings?.defaultShippingCharge ?? 0;
+    
+    return {
+      subtotal: acc.subtotal + itemSubtotal,
+      tax: acc.tax + itemTax,
+      shipping: acc.shipping + shipping,
+    };
+  }, { subtotal: 0, tax: 0, shipping: 0 });
+
+  const { subtotal, tax, shipping } = calculatedData;
+  const total = subtotal + tax + shipping;
 
   const steps = [
     { id: 'shipping', label: 'Shipping', icon: <MapPin className="w-5 h-5" /> },
@@ -79,8 +116,8 @@ export default function CheckoutPage({ user }: { user: UserProfile | null }) {
             />
           )}
           {step === 'payment' && <PaymentForm onNext={() => setStep('review')} />}
-          {step === 'review' && <ReviewOrder user={user} total={total} subtotal={subtotal} tax={tax} count={cartItems.length} onNext={() => setStep('success')} />}
-          {step === 'success' && <SuccessView total={total} count={cartItems.length} onHome={() => navigate('/home')} />}
+          {step === 'review' && <ReviewOrder user={user} total={total} subtotal={subtotal} tax={tax} shipping={shipping} count={cartItems.length} onNext={() => setStep('success')} />}
+          {step === 'success' && <SuccessView total={total} shipping={shipping} count={cartItems.length} onHome={() => navigate('/home')} />}
         </AnimatePresence>
       </div>
 
@@ -220,7 +257,7 @@ function PaymentForm({ onNext }: { onNext: () => void }) {
   );
 }
 
-function ReviewOrder({ user, total, subtotal, tax, count, onNext }: { user: UserProfile, total: number, subtotal: number, tax: number, count: number, onNext: () => void }) {
+function ReviewOrder({ user, total, subtotal, tax, shipping, count, onNext }: { user: UserProfile, total: number, subtotal: number, tax: number, shipping: number, count: number, onNext: () => void }) {
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -247,10 +284,12 @@ function ReviewOrder({ user, total, subtotal, tax, count, onNext }: { user: User
         </div>
         <div className="flex justify-between text-[11px] uppercase tracking-widest font-bold text-cream/40">
           <span>Shipping</span>
-          <span className="text-primary">FREE</span>
+          <span className={shipping === 0 ? 'text-primary' : 'text-cream'}>
+            {shipping === 0 ? 'FREE' : formatCurrency(shipping)}
+          </span>
         </div>
         <div className="flex justify-between text-[11px] uppercase tracking-widest font-bold text-cream/40">
-          <span>Tax (GST 18%)</span>
+          <span>Tax</span>
           <span className="text-cream">{formatCurrency(tax)}</span>
         </div>
         <div className="pt-4 border-t border-white/10 flex justify-between items-center">
@@ -284,7 +323,7 @@ function ReviewOrder({ user, total, subtotal, tax, count, onNext }: { user: User
   );
 }
 
-function SuccessView({ total, count, onHome }: { total: number, count: number, onHome: () => void }) {
+function SuccessView({ total, shipping, count, onHome }: { total: number, shipping: number, count: number, onHome: () => void }) {
   const orderId = Math.random().toString(36).substring(2, 9).toUpperCase();
   return (
     <motion.div 
@@ -324,7 +363,9 @@ function SuccessView({ total, count, onHome }: { total: number, count: number, o
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-cream/60">Delivery</span>
-            <span className="text-primary font-bold uppercase text-[10px] tracking-widest">Free</span>
+            <span className={shipping === 0 ? 'text-primary font-bold uppercase text-[10px] tracking-widest' : 'text-cream font-bold'}>
+              {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+            </span>
           </div>
           <div className="pt-2 border-t border-white/5 flex justify-between items-center">
             <span className="text-cream font-bold">Total Paid</span>

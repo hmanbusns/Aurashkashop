@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trash2, Plus, Minus, ShoppingCart, ChevronRight, Tag } from 'lucide-react';
 import { DatabaseService } from '../services/databaseService';
 import { auth } from '../lib/firebase';
-import { Product } from '../types';
+import { Product, GlobalProductSettings } from '../types';
 import { formatCurrency } from '../lib/format';
 
 interface CartItem extends Product {
@@ -16,11 +16,15 @@ interface CartItem extends Product {
 export default function CartPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [globalSettings, setGlobalSettings] = useState<GlobalProductSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       const user = auth.currentUser;
+      const settings = await DatabaseService.getGlobalSettings();
+      setGlobalSettings(settings);
+
       if (!user) {
         setLoading(false);
         return;
@@ -57,9 +61,25 @@ export default function CartPage() {
     }
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 0;
-  const tax = subtotal * 0.08;
+  // Calculations
+  const calculatedData = items.reduce((acc, item) => {
+    const discount = item.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+    const itemPrice = item.price * (1 - discount / 100);
+    const itemSubtotal = itemPrice * item.quantity;
+    
+    const taxRate = item.taxRate ?? globalSettings?.defaultTaxRate ?? 0;
+    const itemTax = itemSubtotal * (taxRate / 100);
+    
+    const shipping = item.shippingCharge ?? globalSettings?.defaultShippingCharge ?? 0;
+    
+    return {
+      subtotal: acc.subtotal + itemSubtotal,
+      tax: acc.tax + itemTax,
+      shipping: acc.shipping + shipping,
+    };
+  }, { subtotal: 0, tax: 0, shipping: 0 });
+
+  const { subtotal, tax, shipping } = calculatedData;
   const total = subtotal + shipping + tax;
 
   if (loading) {
@@ -119,7 +139,21 @@ export default function CartPage() {
                   <p className="text-[8px] text-cream/30 uppercase tracking-widest">{item.size}</p>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-primary font-bold text-sm">{formatCurrency(item.price)}</p>
+                  <div className="flex flex-col">
+                    {(() => {
+                      const discount = item.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+                      const hasDiscount = discount > 0;
+                      const finalPrice = hasDiscount ? item.price * (1 - discount / 100) : item.price;
+                      return (
+                        <>
+                          <p className="text-primary font-bold text-sm">{formatCurrency(finalPrice)}</p>
+                          {hasDiscount && (
+                            <p className="text-[9px] text-cream/30 line-through">{formatCurrency(item.price)}</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                   <div className="flex items-center gap-1.5 bg-surface p-0.5 rounded-lg">
                     <button onClick={() => updateQuantity(item.cartId, -1)} className="p-1 hover:bg-white/5 rounded-md text-primary"><Minus className="w-2.5 h-2.5" /></button>
                     <span className="text-[10px] font-bold w-3 text-center">{item.quantity}</span>
@@ -164,7 +198,9 @@ export default function CartPage() {
             </div>
             <div className="flex justify-between text-cream/60 text-sm">
               <span>Shipping</span>
-              <span className="font-bold text-primary">Free</span>
+              <span className={shipping === 0 ? 'font-bold text-primary' : 'font-bold text-cream'}>
+                {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+              </span>
             </div>
             <div className="flex justify-between text-cream/60 text-sm">
               <span>Tax</span>

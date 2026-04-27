@@ -1,6 +1,6 @@
 import { ref, push, set, get, remove, update, query, limitToLast } from 'firebase/database';
 import { db } from '../lib/firebase';
-import { Product, BannerConfig, Category, Review, HomeSection } from '../types';
+import { Product, BannerConfig, Category, Review, HomeSection, GlobalProductSettings } from '../types';
 
 export const DatabaseService = {
   async addProduct(product: Omit<Product, 'id' | 'createdAt'>) {
@@ -218,5 +218,25 @@ export const DatabaseService = {
 
   async deleteHomeSection(id: string): Promise<void> {
     await remove(ref(db, `homeSections/${id}`));
+  },
+
+  // Global Settings
+  async getGlobalSettings(): Promise<GlobalProductSettings> {
+    const settingsRef = ref(db, 'globalSettings');
+    const snapshot = await get(settingsRef);
+    if (snapshot.exists()) {
+      return snapshot.val() as GlobalProductSettings;
+    }
+    return {
+      defaultTaxRate: 0,
+      defaultShippingCharge: 0,
+      defaultDiscountPercentage: 0,
+      defaultCouponCode: ''
+    };
+  },
+
+  async updateGlobalSettings(settings: GlobalProductSettings) {
+    const settingsRef = ref(db, 'globalSettings');
+    await set(settingsRef, settings);
   }
 };

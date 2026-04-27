@@ -7,7 +7,7 @@ export interface Product {
   reviewsCount: number;
   imageUrl: string;
   additionalImages?: string[];
-  videoUrl?: string;
+  galleryAutoplay?: boolean;
   category: string | string[]; // Compatibility for single category, but moving to multiple
   categories?: string[]; // Array of categories
   ingredients?: string[];
@@ -16,8 +16,21 @@ export interface Product {
   order?: number;
   imageCurve?: number;
   tags?: { text: string; color: string }[];
+  videoUrl?: string; // For reel-like videos
   customFields?: Record<string, string>;
   createdAt: number;
+  // Advanced Settings overrides
+  taxRate?: number;
+  shippingCharge?: number;
+  discountPercentage?: number;
+  couponCode?: string;
+}
+
+export interface GlobalProductSettings {
+  defaultTaxRate: number;
+  defaultShippingCharge: number;
+  defaultDiscountPercentage: number;
+  defaultCouponCode: string;
 }
 
 export type CategoryLayout = 'grid' | 'reel' | 'banner';

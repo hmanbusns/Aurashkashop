@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Plus, Edit2, Trash2, X, Check, Package, DollarSign, 
-  Tag, Star, List, LayoutGrid, Settings, Save, AlertCircle, Image as ImageIcon, Link as LinkIcon
+  Tag, Star, List, LayoutGrid, Settings, Save, AlertCircle, Image as ImageIcon, Link as LinkIcon,
+  ChevronLeft, ChevronRight, Play, Bold, Italic, Type, Palette, Minus,
+  Maximize2, Minimize2, Code, Eye, Image as ImageIcon2
 } from 'lucide-react';
-import { Product, BannerConfig, Category, Review, HomeSection } from '../types';
+import { Product, BannerConfig, Category, Review, HomeSection, GlobalProductSettings } from '../types';
 import { DatabaseService } from '../services/databaseService';
 import ImageUploader from '../components/ImageUploader';
 import { formatCurrency } from '../lib/format';
@@ -14,9 +16,80 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  const [isDescFullscreen, setIsDescFullscreen] = useState(false);
+  const [descViewMode, setDescViewMode] = useState<'visual' | 'code'>('visual');
+  const visualEditorRef = useRef<HTMLDivElement>(null);
+
+  // Use an effect to sync the visual editor's content ONLY when needed
+  // to prevent cursor jumping
+  useEffect(() => {
+    if (descViewMode === 'visual' && visualEditorRef.current) {
+      if (visualEditorRef.current.innerHTML !== formData.description) {
+        visualEditorRef.current.innerHTML = formData.description;
+      }
+    }
+  }, [descViewMode]); // Run when switching modes
+
+  const syncCodeFromVisual = () => {
+    if (visualEditorRef.current) {
+      const html = visualEditorRef.current.innerHTML;
+      if (html !== formData.description) {
+        setFormData(prev => ({ ...prev, description: html }));
+      }
+    }
+  };
+
+  const execCmd = (command: string, value: string = '') => {
+    if (descViewMode === 'visual') {
+      visualEditorRef.current?.focus();
+      document.execCommand(command, false, value);
+      syncCodeFromVisual();
+    } else if (descViewMode === 'code') {
+      insertTag(command === 'bold' ? 'b' : command === 'italic' ? 'i' : 'span');
+    }
+  };
+
+  const insertTag = (tag: string, endTag?: string, color?: string, size?: string, customHtml?: string) => {
+    if (!descriptionRef.current && descViewMode === 'code') return;
+    
+    let text = formData.description;
+    let inserted = '';
+    const start = descriptionRef.current?.selectionStart || 0;
+    const end = descriptionRef.current?.selectionEnd || 0;
+    const selected = text.substring(start, end);
+
+    if (customHtml) {
+      inserted = customHtml;
+    } else if (tag === 'hr') {
+      inserted = '\n<hr class="border-white/10 my-4" />\n';
+    } else if (color) {
+      inserted = `<span style="color: ${color}">${selected || 'selected text'}</span>`;
+    } else if (size) {
+      inserted = `<span style="font-size: ${size}">${selected || 'selected text'}</span>`;
+    } else {
+      inserted = `<${tag}>${selected || 'selected text'}</${endTag || tag}>`;
+    }
+
+    if (descViewMode === 'code' && descriptionRef.current) {
+      const newText = text.substring(0, start) + inserted + text.substring(end);
+      setFormData({ ...formData, description: newText });
+    } else {
+      setFormData({ ...formData, description: text + inserted });
+    }
+  };
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'hero' | 'categories' | 'home'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'hero' | 'categories' | 'home' | 'settings'>('products');
   const navigate = useNavigate();
+
+  // Global Settings State
+  const [globalSettings, setGlobalSettings] = useState<GlobalProductSettings>({
+    defaultTaxRate: 0,
+    defaultShippingCharge: 0,
+    defaultDiscountPercentage: 0,
+    defaultCouponCode: ''
+  });
 
   // Home Sections State
   const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
@@ -76,7 +149,7 @@ export default function AdminPanel() {
     reviewsCount: 120,
     imageUrl: '',
     additionalImages: [],
-    videoUrl: '',
+    galleryAutoplay: false,
     category: 'Skincare',
     categories: [],
     ingredients: [],
@@ -84,7 +157,11 @@ export default function AdminPanel() {
     size: '50ml, 100ml, 150ml',
     order: 0,
     imageCurve: 40,
-    tags: []
+    tags: [],
+    taxRate: undefined,
+    shippingCharge: undefined,
+    discountPercentage: undefined,
+    couponCode: ''
   });
 
   const [newImageLink, setNewImageLink] = useState('');
@@ -100,7 +177,13 @@ export default function AdminPanel() {
     loadBanner();
     loadCategories();
     loadHomeSections();
+    loadGlobalSettings();
   }, []);
+
+  async function loadGlobalSettings() {
+    const data = await DatabaseService.getGlobalSettings();
+    setGlobalSettings(data);
+  }
 
   async function loadProducts() {
     const data = await DatabaseService.getProducts();
@@ -135,9 +218,19 @@ export default function AdminPanel() {
 
   const addAdditionalImage = () => {
     if (newImageLink) {
+      let finalLink = newImageLink;
+      
+      // YouTube transformation helper
+      if (finalLink.includes('youtube.com/watch?v=') || finalLink.includes('youtu.be/')) {
+        const videoId = finalLink.split('v=')[1]?.split('&')[0] || finalLink.split('/').pop()?.split('?')[0];
+        if (videoId) {
+          finalLink = `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+
       setFormData({
         ...formData,
-        additionalImages: [...(formData.additionalImages || []), newImageLink]
+        additionalImages: [...(formData.additionalImages || []), finalLink]
       });
       setNewImageLink('');
     }
@@ -208,7 +301,12 @@ export default function AdminPanel() {
       imageCurve: product.imageCurve ?? 40,
       tags: product.tags || [],
       customFields: product.customFields || {},
-      categories: Array.isArray(product.categories) ? product.categories : (product.category ? [product.category] : [])
+      galleryAutoplay: product.galleryAutoplay || false,
+      categories: Array.isArray(product.categories) ? product.categories : (product.category ? [product.category] : []),
+      taxRate: product.taxRate,
+      shippingCharge: product.shippingCharge,
+      discountPercentage: product.discountPercentage,
+      couponCode: product.couponCode
     });
     setEditingId(product.id);
     setIsAdding(true);
@@ -223,7 +321,7 @@ export default function AdminPanel() {
       reviewsCount: 120,
       imageUrl: '',
       additionalImages: [],
-      videoUrl: '',
+      galleryAutoplay: false,
       category: categories[0]?.name || 'Skincare',
       categories: [categories[0]?.name].filter(Boolean) as string[],
       ingredients: [],
@@ -232,7 +330,11 @@ export default function AdminPanel() {
       order: products.length,
       imageCurve: 40,
       tags: [],
-      customFields: {}
+      customFields: {},
+      taxRate: undefined,
+      shippingCharge: undefined,
+      discountPercentage: undefined,
+      couponCode: ''
     });
     setEditingId(null);
     setIsAdding(false);
@@ -435,6 +537,12 @@ export default function AdminPanel() {
           >
             Home Layout
           </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 px-4 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'settings' ? 'bg-primary text-background' : 'text-cream/30 hover:text-cream/60'}`}
+          >
+            Product Settings
+          </button>
         </div>
 
         <div className="hidden sm:block">
@@ -513,11 +621,26 @@ export default function AdminPanel() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-cream/40 uppercase tracking-widest mb-3">Additional Images</label>
+                  <label className="block text-xs font-bold text-cream/40 uppercase tracking-widest mb-3">Media Gallery (Images & Video Links)</label>
+                  <div className="flex items-center gap-2 mb-3">
+                    <button 
+                      type="button"
+                      onClick={() => setFormData({...formData, galleryAutoplay: !formData.galleryAutoplay})}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        formData.galleryAutoplay 
+                          ? 'bg-primary/20 border-primary text-primary' 
+                          : 'bg-white/5 border-white/10 text-cream/40'
+                      }`}
+                    >
+                      <Play className="w-3 h-3" />
+                      Autoplay {formData.galleryAutoplay ? 'ON' : 'OFF'}
+                    </button>
+                    <p className="text-[9px] text-cream/20 font-bold uppercase tracking-widest ml-1">Tip: Paste a YouTube link or direct .mp4 link</p>
+                  </div>
                   <div className="flex gap-2 mb-4">
                     <input 
                       type="text" 
-                      placeholder="Paste image link..."
+                      placeholder="Paste link..."
                       value={newImageLink}
                       onChange={(e) => setNewImageLink(e.target.value)}
                       className="flex-1 bg-background border border-white/5 rounded-xl px-4 text-cream outline-none focus:border-primary/50"
@@ -531,18 +654,57 @@ export default function AdminPanel() {
                     </button>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    {formData.additionalImages?.map((img, idx) => (
-                      <div key={idx} className="relative group rounded-lg overflow-hidden h-16 bg-surface border border-white/5">
-                        <img src={img} className="w-full h-full object-cover" />
-                        <button 
-                          type="button"
-                          onClick={() => removeAdditionalImage(idx)}
-                          className="absolute inset-0 bg-red-500/80 items-center justify-center hidden group-hover:flex transition-all"
-                        >
-                          <Trash2 className="w-4 h-4 text-white" />
-                        </button>
-                      </div>
-                    ))}
+                    {formData.additionalImages?.map((img, idx) => {
+                      const isVideo = img.includes('youtube.com/embed') || img.toLowerCase().endsWith('.mp4');
+                      return (
+                        <div key={idx} className="relative group rounded-lg overflow-hidden h-24 bg-surface border border-white/5">
+                          {isVideo ? (
+                            <div className="w-full h-full flex items-center justify-center bg-black/40">
+                              <LinkIcon className="w-5 h-5 text-primary" />
+                            </div>
+                          ) : (
+                            <img src={img} className="w-full h-full object-cover" />
+                          )}
+                          <div className="absolute inset-x-0 bottom-0 bg-background/90 backdrop-blur-sm flex items-center justify-around py-1.5 border-t border-white/10">
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (idx > 0) {
+                                  const newArr = [...(formData.additionalImages || [])];
+                                  [newArr[idx-1], newArr[idx]] = [newArr[idx], newArr[idx-1]];
+                                  setFormData({...formData, additionalImages: newArr});
+                                }
+                              }}
+                              className={`p-1 rounded-lg transition-colors ${idx > 0 ? 'text-primary hover:bg-primary/10' : 'text-cream/10'}`}
+                              disabled={idx === 0}
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => removeAdditionalImage(idx)}
+                              className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (idx < (formData.additionalImages?.length || 0) - 1) {
+                                  const newArr = [...(formData.additionalImages || [])];
+                                  [newArr[idx+1], newArr[idx]] = [newArr[idx], newArr[idx+1]];
+                                  setFormData({...formData, additionalImages: newArr});
+                                }
+                              }}
+                              className={`p-1 rounded-lg transition-colors ${idx < (formData.additionalImages?.length || 0) - 1 ? 'text-primary hover:bg-primary/10' : 'text-cream/10'}`}
+                              disabled={idx === (formData.additionalImages?.length || 0) - 1}
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -656,14 +818,6 @@ export default function AdminPanel() {
                 </div>
 
                 <AdminInput 
-                  label="Product Video URL" 
-                  icon={<LinkIcon className="w-4 h-4" />}
-                  placeholder="https://..."
-                  value={formData.videoUrl}
-                  onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
-                />
-
-                <AdminInput 
                   label="Available Sizes" 
                   icon={<Edit2 className="w-4 h-4" />}
                   placeholder="e.g. 50ml, 100ml"
@@ -672,14 +826,131 @@ export default function AdminPanel() {
                   required
                 />
 
-                <div>
-                  <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest mb-1.5 px-1">Description</label>
-                  <textarea 
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full p-4 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm min-h-[60px]"
-                    required
-                  />
+                <div className={`${isDescFullscreen ? 'fixed inset-0 z-[100] bg-background p-6 flex flex-col' : ''}`}>
+                  <div className="flex items-center justify-between mb-1.5 px-1">
+                    <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest">Description</label>
+                    <div className="flex items-center gap-2">
+                       <button 
+                        type="button" 
+                        onClick={() => setDescViewMode(descViewMode === 'visual' ? 'code' : 'visual')}
+                        className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest ${
+                          descViewMode === 'code' ? 'bg-primary/20 border-primary text-primary' : 'bg-white/5 border-white/10 text-cream/40'
+                        }`}
+                      >
+                        {descViewMode === 'code' ? <Eye className="w-3 h-3" /> : <Code className="w-3 h-3" />}
+                        {descViewMode === 'code' ? 'Switch to Visual' : 'Switch to Code'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsDescFullscreen(!isDescFullscreen)}
+                        className="p-1.5 bg-white/5 border border-white/10 rounded-lg text-cream/40 hover:text-primary transition-all"
+                      >
+                        {isDescFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-1 mb-2 p-1 bg-background/50 border border-white/5 rounded-xl sticky top-0 z-10 backdrop-blur-md">
+                    <button type="button" onClick={() => execCmd('bold')} className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20" title="Bold">
+                      <Bold className="w-3 h-3" />
+                    </button>
+                    <button type="button" onClick={() => execCmd('italic')} className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20" title="Italic">
+                      <Italic className="w-3 h-3" />
+                    </button>
+                    <button type="button" 
+                      onClick={() => {
+                        const size = prompt('Enter size (e.g. 20px, 1.5rem, 150%):');
+                        if (!size) return;
+                        
+                        if (descViewMode === 'visual') {
+                          visualEditorRef.current?.focus();
+                          const selection = window.getSelection();
+                          if (selection && selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0);
+                            const span = document.createElement('span');
+                            span.style.fontSize = size;
+                            
+                            if (range.collapsed) {
+                              // If no selection, insert a space with the style so typing continues in it
+                              span.innerHTML = '&#8203;'; // Zero-width space to hold the style
+                              range.insertNode(span);
+                              range.setStart(span, 1);
+                              range.setEnd(span, 1);
+                            } else {
+                              range.surroundContents(span);
+                            }
+                            syncCodeFromVisual();
+                          }
+                        } else {
+                          insertTag('span', 'span', '', size);
+                        }
+                      }} 
+                      className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20 flex items-center gap-1" title="Set Size">
+                      <Type className="w-3 h-3" />
+                      <span className="text-[8px] font-bold">SIZE</span>
+                    </button>
+                    <button type="button" 
+                      onClick={() => {
+                        const color = prompt('Enter color hex (e.g. #FF0000) or name:');
+                        if (!color) return;
+
+                        if (descViewMode === 'visual') {
+                          visualEditorRef.current?.focus();
+                          document.execCommand('foreColor', false, color);
+                          syncCodeFromVisual();
+                        } else {
+                          insertTag('span', 'span', color);
+                        }
+                      }} 
+                      className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20" title="Set Color">
+                      <Palette className="w-3 h-3 text-primary" />
+                    </button>
+                    <button type="button" onClick={() => {
+                        const url = prompt('Enter Image URL:');
+                        if (url) {
+                          const html = `<img src="${url}" class="w-full rounded-xl my-4 object-cover max-h-[300px]" />`;
+                          if (descViewMode === 'visual') {
+                            execCmd('insertHTML', html);
+                          } else {
+                            insertTag('', '', '', '', html);
+                          }
+                        }
+                      }} 
+                      className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20" title="Add Image">
+                      <ImageIcon2 className="w-3 h-3" />
+                    </button>
+                    <div className="w-px h-4 bg-white/10 mx-1" />
+                    <button type="button" onClick={() => {
+                        const html = '<hr class="border-white/10 my-4" />';
+                        if (descViewMode === 'visual') execCmd('insertHTML', html);
+                        else insertTag('hr');
+                      }} 
+                      className="p-2 hover:bg-primary/10 text-cream/60 hover:text-primary rounded-lg transition-colors border border-transparent hover:border-primary/20" title="Divider">
+                      <Minus className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className={`relative flex-1 min-h-0 ${isDescFullscreen ? 'h-full' : ''}`}>
+                    {descViewMode === 'code' ? (
+                      <textarea 
+                        ref={descriptionRef}
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className={`w-full p-4 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm font-mono ${isDescFullscreen ? 'h-full resize-none' : 'min-h-[200px]'}`}
+                        placeholder="Enter description HTML here..."
+                        required
+                      />
+                    ) : (
+                      <div 
+                        ref={visualEditorRef}
+                        contentEditable
+                        onInput={syncCodeFromVisual}
+                        onBlur={syncCodeFromVisual}
+                        className={`w-full p-4 bg-background border border-white/5 rounded-2xl focus:border-primary/50 transition-all outline-none text-cream text-sm overflow-y-auto product-description-content ${isDescFullscreen ? 'h-full' : 'min-h-[200px] max-h-[500px]'}`}
+                        style={{ whiteSpace: 'pre-wrap' }}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -783,6 +1054,51 @@ export default function AdminPanel() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Advanced Settings Section */}
+                <div className="bg-surface/50 border border-primary/20 p-5 rounded-2xl space-y-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Settings className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-bold text-cream">Advanced Overrides</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <AdminInput 
+                      label="Tax Rate (%)" 
+                      type="number"
+                      placeholder={globalSettings.defaultTaxRate + '% (Default)'}
+                      value={formData.taxRate ?? ''}
+                      onChange={(e: any) => setFormData({...formData, taxRate: e.target.value ? parseFloat(e.target.value) : undefined})}
+                    />
+                    <AdminInput 
+                      label="Shipping (₹)" 
+                      type="number"
+                      placeholder={globalSettings.defaultShippingCharge + ' (Default)'}
+                      value={formData.shippingCharge ?? ''}
+                      onChange={(e: any) => setFormData({...formData, shippingCharge: e.target.value ? parseFloat(e.target.value) : undefined})}
+                    />
+                    <AdminInput 
+                      label="Discount (%)" 
+                      type="number"
+                      placeholder={globalSettings.defaultDiscountPercentage + '% (Default)'}
+                      value={formData.discountPercentage ?? ''}
+                      onChange={(e: any) => setFormData({...formData, discountPercentage: e.target.value ? parseFloat(e.target.value) : undefined})}
+                    />
+                    <AdminInput 
+                      label="Coupon Code" 
+                      placeholder={globalSettings.defaultCouponCode || 'No default'}
+                      value={formData.couponCode ?? ''}
+                      onChange={(e: any) => setFormData({...formData, couponCode: e.target.value})}
+                    />
+                  </div>
+                  <p className="text-[10px] text-cream/30 italic">Tip: Leave empty or reset to use Universal Settings from Product Settings tab.</p>
+                  <button 
+                    type="button" 
+                    onClick={() => setFormData({...formData, taxRate: undefined, shippingCharge: undefined, discountPercentage: undefined, couponCode: ''})}
+                    className="text-[9px] text-primary font-bold uppercase hover:underline"
+                  >
+                    Reset to Universal Settings
+                  </button>
                 </div>
 
                 <button 
@@ -1306,6 +1622,92 @@ export default function AdminPanel() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-surface/50 border border-white/5 rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 mb-6 max-w-2xl mx-auto"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Settings className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-cream">Universal Product Settings</h2>
+              <p className="text-xs text-cream/30 uppercase font-bold tracking-widest">Global Defaults for all items</p>
+            </div>
+          </div>
+
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await DatabaseService.updateGlobalSettings(globalSettings);
+                alert('Universal settings updated successfully!');
+              } catch (err) {
+                console.error(err);
+                alert('Failed to update settings.');
+              }
+            }} 
+            className="space-y-6"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <AdminInput 
+                label="Default Tax Rate (%)" 
+                type="number"
+                icon={<DollarSign className="w-4 h-4" />}
+                value={globalSettings.defaultTaxRate}
+                onChange={(e: any) => setGlobalSettings({...globalSettings, defaultTaxRate: parseFloat(e.target.value) || 0})}
+                required
+              />
+              <AdminInput 
+                label="Default Shipping Charge (₹)" 
+                type="number"
+                icon={<Package className="w-4 h-4" />}
+                value={globalSettings.defaultShippingCharge}
+                onChange={(e: any) => setGlobalSettings({...globalSettings, defaultShippingCharge: parseFloat(e.target.value) || 0})}
+                required
+              />
+              <AdminInput 
+                label="Default Discount (%)" 
+                type="number"
+                icon={<Tag className="w-4 h-4" />}
+                value={globalSettings.defaultDiscountPercentage}
+                onChange={(e: any) => setGlobalSettings({...globalSettings, defaultDiscountPercentage: parseFloat(e.target.value) || 0})}
+                required
+              />
+              <AdminInput 
+                label="Default Coupon Code" 
+                icon={<List className="w-4 h-4" />}
+                value={globalSettings.defaultCouponCode}
+                onChange={(e: any) => setGlobalSettings({...globalSettings, defaultCouponCode: e.target.value})}
+              />
+            </div>
+
+            <div className="bg-primary/5 border border-primary/10 p-5 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-primary uppercase tracking-widest">Note on Default Settings</p>
+                  <p className="text-[11px] text-cream/40 leading-relaxed">
+                    These values will be applied to all products that do not have their own "Advanced Overrides" set. 
+                    If you set an override on a specific product, it will take priority over these universal settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              className="w-full py-4 bg-primary text-background font-bold rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
+            >
+              <Save className="w-5 h-5" />
+              Save Universal Settings
+            </button>
+          </form>
+        </motion.div>
       )}
 
       {activeTab === 'products' && (

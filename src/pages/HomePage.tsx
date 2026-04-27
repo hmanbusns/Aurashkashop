@@ -5,7 +5,7 @@ import {
   Search, ShoppingCart, User as UserIcon, Heart, Home, Grid, 
   Filter, LogOut, Settings, LayoutGrid, Star, Sun, Sunrise, Sunset, Moon, MapPin 
 } from 'lucide-react';
-import { UserProfile, Product, BannerConfig, Category, HomeSection } from '../types';
+import { UserProfile, Product, BannerConfig, Category, HomeSection, GlobalProductSettings } from '../types';
 import { DatabaseService } from '../services/databaseService';
 import { AuthService } from '../services/authService';
 import { formatCurrency } from '../lib/format';
@@ -15,6 +15,7 @@ import { Shimmer, ProductShimmer, CategoryShimmer } from '../components/Shimmer'
 export default function HomePage({ user: initialUser }: { user: UserProfile | null }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
   const [products, setProducts] = useState<Product[]>([]);
+  const [globalSettings, setGlobalSettings] = useState<GlobalProductSettings | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
   const [banner, setBanner] = useState<BannerConfig | null>(null);
@@ -46,16 +47,18 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
 
   useEffect(() => {
     async function load() {
-      const [prodData, bannerData, catData, homeData] = await Promise.all([
+      const [prodData, bannerData, catData, homeData, settingsData] = await Promise.all([
         DatabaseService.getProducts(),
         DatabaseService.getBannerConfig(),
         DatabaseService.getCategories(),
-        DatabaseService.getHomeSections()
+        DatabaseService.getHomeSections(),
+        DatabaseService.getGlobalSettings()
       ]);
       setProducts(prodData);
       setBanner(bannerData);
       setCategories(catData);
       setHomeSections(homeData);
+      setGlobalSettings(settingsData);
 
       if (user) {
         const [w, cartItems] = await Promise.all([
@@ -304,6 +307,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
                 key={section.id} 
                 section={section} 
                 products={sectionProducts}
+                globalSettings={globalSettings}
                 onProductClick={(id) => navigate(`/product/${id}`)}
                 wishlist={wishlist}
                 onToggleWishlist={toggleWishlist}
@@ -321,6 +325,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
                   return p.category === cat.name;
                 })
                 .sort((a, b) => (a.order || 0) - (b.order || 0))}
+              globalSettings={globalSettings}
               onProductClick={(id) => navigate(`/product/${id}`)}
               wishlist={wishlist}
               onToggleWishlist={toggleWishlist}
@@ -350,6 +355,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
 function ManualSection({ 
   section, 
   products, 
+  globalSettings,
   onProductClick,
   wishlist,
   onToggleWishlist
@@ -357,6 +363,7 @@ function ManualSection({
   key?: string,
   section: HomeSection, 
   products: Product[],
+  globalSettings: GlobalProductSettings | null,
   onProductClick: (id: string) => void | Promise<void>,
   wishlist: string[],
   onToggleWishlist: (id: string) => void | Promise<void>
@@ -374,40 +381,57 @@ function ManualSection({
         </div>
         
         <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-4 px-4">
-          {products.map((p) => (
-            <motion.div 
-              key={p.id}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onProductClick(p.id)}
-              className="relative min-w-[140px] h-60 rounded-[24px] overflow-hidden group border border-white/5"
-            >
-              <img 
-                src={p.imageUrl} 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                alt={p.name}
-                referrerPolicy="no-referrer"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-              
-              <button 
-                onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                className={`absolute top-3 right-3 p-1.5 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
-              >
-                <Heart className={`w-3 h-3 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
-              </button>
+          {products.map((p) => {
+            const discount = p.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+            const hasDiscount = discount > 0;
+            const finalPrice = hasDiscount ? p.price * (1 - discount / 100) : p.price;
 
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <div className="flex gap-0.5 mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-1.5 h-1.5 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
-                    ))}
+            return (
+              <motion.div 
+                key={p.id}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onProductClick(p.id)}
+                className="relative min-w-[140px] h-60 rounded-[24px] overflow-hidden group border border-white/5"
+              >
+                <img 
+                  src={p.imageUrl} 
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                  alt={p.name}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                
+                {hasDiscount && (
+                  <div className="absolute top-3 left-3 px-1.5 py-0.5 bg-red-500 text-white rounded-lg text-[7px] font-bold uppercase tracking-widest z-10 shadow-lg">
+                    {discount}% OFF
                   </div>
-                  <h4 className="text-white font-bold text-xs mb-0.5 line-clamp-1">{p.name}</h4>
-                  <p className="text-primary font-bold text-sm">{formatCurrency(p.price)}</p>
-               </div>
-            </motion.div>
-          ))}
+                )}
+
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 p-1.5 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+                >
+                  <Heart className={`w-3 h-3 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+                </button>
+
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <div className="flex gap-0.5 mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-1.5 h-1.5 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
+                      ))}
+                    </div>
+                    <h4 className="text-white font-bold text-xs mb-0.5 line-clamp-1">{p.name}</h4>
+                    <div className="flex items-center gap-2">
+                       <p className="text-primary font-bold text-sm">{formatCurrency(finalPrice)}</p>
+                       {hasDiscount && (
+                         <p className="text-[9px] text-white/40 line-through">{formatCurrency(p.price)}</p>
+                       )}
+                    </div>
+                 </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
     );
@@ -423,36 +447,52 @@ function ManualSection({
           </div>
         </div>
         <div className="space-y-3">
-          {products.map((p) => (
-            <div 
-              key={p.id}
-              onClick={() => onProductClick(p.id)}
-              className="relative h-40 w-full rounded-[24px] overflow-hidden group border border-white/5"
-            >
-              <img 
-                src={p.imageUrl} 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
-                alt={p.name}
-                referrerPolicy="no-referrer"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent p-6 flex flex-col justify-center">
-                 <div className="flex gap-1 mb-1.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-2.5 h-2.5 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
-                    ))}
-                  </div>
-                 <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
-                 <p className="text-primary font-bold text-base">{formatCurrency(p.price)}</p>
-              </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
-              </button>
-            </div>
-          ))}
+          {products.map((p) => {
+             const discount = p.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+             const hasDiscount = discount > 0;
+             const finalPrice = hasDiscount ? p.price * (1 - discount / 100) : p.price;
+
+             return (
+               <div 
+                 key={p.id}
+                 onClick={() => onProductClick(p.id)}
+                 className="relative h-40 w-full rounded-[24px] overflow-hidden group border border-white/5"
+               >
+                 <img 
+                   src={p.imageUrl} 
+                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                   alt={p.name}
+                   referrerPolicy="no-referrer"
+                   loading="lazy"
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent p-6 flex flex-col justify-center">
+                    <div className="flex gap-1 mb-1.5">
+                       {[...Array(5)].map((_, i) => (
+                         <Star key={i} className={`w-2.5 h-2.5 ${i < p.rating ? 'text-primary fill-current' : 'text-cream/10'}`} />
+                       ))}
+                     </div>
+                    <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
+                    <div className="flex items-center gap-3">
+                      <p className="text-primary font-bold text-base">{formatCurrency(finalPrice)}</p>
+                      {hasDiscount && (
+                        <div className="flex items-center gap-2">
+                           <p className="text-white/40 font-medium text-sm line-through">{formatCurrency(p.price)}</p>
+                           <span className="px-1.5 py-0.5 bg-red-500 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest shadow-lg">
+                             {discount}% OFF
+                           </span>
+                        </div>
+                      )}
+                    </div>
+                 </div>
+                 <button 
+                   onClick={(e) => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                   className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+                 >
+                   <Heart className={`w-3.5 h-3.5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+                 </button>
+               </div>
+             );
+          })}
         </div>
       </section>
     );
@@ -468,7 +508,7 @@ function ManualSection({
       </div>
       <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
-          <ProductCard key={p.id} product={p} onClick={() => onProductClick(p.id)} isWishlisted={wishlist.includes(p.id)} onToggleWishlist={() => onToggleWishlist(p.id)} />
+          <ProductCard key={p.id} product={p} globalSettings={globalSettings} onClick={() => onProductClick(p.id)} isWishlisted={wishlist.includes(p.id)} onToggleWishlist={() => onToggleWishlist(p.id)} />
         ))}
       </div>
     </section>
@@ -478,6 +518,7 @@ function ManualSection({
 function CategorySection({ 
   category, 
   products, 
+  globalSettings,
   onProductClick,
   wishlist,
   onToggleWishlist
@@ -485,6 +526,7 @@ function CategorySection({
   key?: string,
   category: Category, 
   products: Product[],
+  globalSettings: GlobalProductSettings | null,
   onProductClick: (id: string) => void | Promise<void>,
   wishlist: string[],
   onToggleWishlist: (id: string) => void | Promise<void>
@@ -504,6 +546,7 @@ function CategorySection({
             <ProductCard 
               key={p.id} 
               product={p} 
+              globalSettings={globalSettings}
               onClick={() => onProductClick(p.id)}
               isWishlisted={wishlist.includes(p.id)}
               onToggleWishlist={() => onToggleWishlist(p.id)}
@@ -514,100 +557,136 @@ function CategorySection({
 
       {category.layoutType === 'reel' && (
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-3">
-          {products.map(p => (
-            <motion.div 
-              key={p.id}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => onProductClick(p.id)}
-              className="relative w-60 h-[380px] rounded-[32px] overflow-hidden shrink-0 group cursor-pointer border border-white/10 shadow-2xl"
-            >
-               {p.videoUrl ? (
-                 <video 
-                   src={p.videoUrl} 
-                   autoPlay 
-                   muted 
-                   loop 
-                   playsInline
-                   className="absolute inset-0 w-full h-full object-cover"
-                 />
-               ) : (
-                 p.imageUrl ? (
-                   <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
-                 ) : (
-                   <div className="absolute inset-0 flex items-center justify-center bg-surface">
-                     <Grid className="w-6 h-6 text-cream/10" />
-                   </div>
-                 )
-               )}
-               <button 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  onToggleWishlist(p.id);
-                }}
-                className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+          {products.map(p => {
+             const discount = p.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+             const hasDiscount = discount > 0;
+             const finalPrice = hasDiscount ? p.price * (1 - discount / 100) : p.price;
+
+             return (
+               <motion.div 
+                 key={p.id}
+                 whileHover={{ scale: 1.02 }}
+                 onClick={() => onProductClick(p.id)}
+                 className="relative w-60 h-[380px] rounded-[32px] overflow-hidden shrink-0 group cursor-pointer border border-white/10 shadow-2xl"
                >
-                <Heart className={`w-4 h-4 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
-               </button>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6">
-                  <div className="flex flex-wrap gap-1.5 mb-1.5">
-                    {p.tags?.map((tag, idx) => (
-                      <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border">
-                        {tag.text}
-                      </span>
-                    ))}
+                  {p.videoUrl ? (
+                    <video 
+                      src={p.videoUrl} 
+                      autoPlay 
+                      muted 
+                      loop 
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    p.imageUrl ? (
+                      <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-surface">
+                        <Grid className="w-6 h-6 text-cream/10" />
+                      </div>
+                    )
+                  )}
+                  {hasDiscount && (
+                    <div className="absolute top-4 left-4 px-2 py-1 bg-red-500 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest z-10 shadow-lg">
+                      {discount}% OFF
+                    </div>
+                  )}
+                  <button 
+                   onClick={(e) => { 
+                     e.stopPropagation(); 
+                     onToggleWishlist(p.id);
+                   }}
+                   className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+                  >
+                   <Heart className={`w-4 h-4 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+                  </button>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6">
+                     <div className="flex flex-wrap gap-1.5 mb-1.5">
+                       {p.tags?.map((tag, idx) => (
+                         <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border">
+                           {tag.text}
+                         </span>
+                       ))}
+                     </div>
+                     <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
+                     <div className="flex items-center gap-3">
+                       <p className="text-primary font-bold text-base">{formatCurrency(finalPrice)}</p>
+                       {hasDiscount && (
+                         <p className="text-white/40 font-medium text-sm line-through">{formatCurrency(p.price)}</p>
+                       )}
+                     </div>
                   </div>
-                  <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
-                  <p className="text-primary font-bold text-base">{formatCurrency(p.price)}</p>
-               </div>
-            </motion.div>
-          ))}
+               </motion.div>
+             );
+          })}
         </div>
       )}
 
       {category.layoutType === 'banner' && (
         <div className="space-y-3">
-          {products.map(p => (
-            <div 
-              key={p.id} 
-              onClick={() => onProductClick(p.id)}
-              className="relative h-36 rounded-[24px] overflow-hidden group cursor-pointer border border-white/5"
-            >
-              {p.imageUrl ? (
-                <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" loading="lazy" />
-              ) : (
-                <div className="absolute inset-0 bg-surface flex items-center justify-center">
-                   <Grid className="w-6 h-6 text-cream/10" />
-                </div>
-              )}
-              <button 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  onToggleWishlist(p.id);
-                }}
-                className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+          {products.map(p => {
+             const discount = p.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+             const hasDiscount = discount > 0;
+             const finalPrice = hasDiscount ? p.price * (1 - discount / 100) : p.price;
+
+             return (
+               <div 
+                 key={p.id} 
+                 onClick={() => onProductClick(p.id)}
+                 className="relative h-36 rounded-[24px] overflow-hidden group cursor-pointer border border-white/5"
                >
-                <Heart className={`w-3.5 h-3.5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
-               </button>
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center p-6">
-                 <div className="flex flex-wrap gap-1.5 mb-1.5">
-                    {p.tags?.map((tag, idx) => (
-                      <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border">
-                        {tag.text}
-                      </span>
-                    ))}
-                  </div>
-                 <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
-                 <p className="text-primary font-bold text-base">{formatCurrency(p.price)}</p>
-              </div>
-            </div>
-          ))}
+                 {p.imageUrl ? (
+                   <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" loading="lazy" />
+                 ) : (
+                   <div className="absolute inset-0 bg-surface flex items-center justify-center">
+                      <Grid className="w-6 h-6 text-cream/10" />
+                   </div>
+                 )}
+                 {hasDiscount && (
+                    <div className="absolute top-4 left-4 px-2 py-1 bg-red-500 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest z-10 shadow-lg">
+                      {discount}% OFF
+                    </div>
+                  )}
+                 <button 
+                   onClick={(e) => { 
+                     e.stopPropagation(); 
+                     onToggleWishlist(p.id);
+                   }}
+                   className={`absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full transition-colors z-10 ${wishlist.includes(p.id) ? 'text-red-500' : 'text-white hover:text-red-500'}`}
+                  >
+                   <Heart className={`w-3.5 h-3.5 ${wishlist.includes(p.id) ? 'fill-current' : ''}`} />
+                  </button>
+                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center p-6">
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                       {p.tags?.map((tag, idx) => (
+                         <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border">
+                           {tag.text}
+                         </span>
+                       ))}
+                     </div>
+                    <h4 className="text-white font-bold text-lg mb-0.5">{p.name}</h4>
+                    <div className="flex items-center gap-3">
+                       <p className="text-primary font-bold text-base">{formatCurrency(finalPrice)}</p>
+                       {hasDiscount && (
+                         <p className="text-white/40 font-medium text-sm line-through">{formatCurrency(p.price)}</p>
+                       )}
+                    </div>
+                 </div>
+               </div>
+             );
+          })}
         </div>
       )}
     </section>
   );
 }
 
-function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key?: string; product: Product; onClick: () => void; isWishlisted: boolean; onToggleWishlist: () => void }) {
+function ProductCard({ product, globalSettings, onClick, isWishlisted, onToggleWishlist }: { key?: string; product: Product; globalSettings: GlobalProductSettings | null; onClick: () => void; isWishlisted: boolean; onToggleWishlist: () => void }) {
+  const discount = product.discountPercentage ?? globalSettings?.defaultDiscountPercentage ?? 0;
+  const hasDiscount = discount > 0;
+  const finalPrice = hasDiscount ? product.price * (1 - discount / 100) : product.price;
+
   return (
     <motion.div 
       whileHover={{ y: -3 }}
@@ -632,6 +711,11 @@ function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key
           </div>
         )}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
+          {hasDiscount && (
+            <span className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest bg-red-500 text-white shadow-lg backdrop-blur-sm self-start">
+              {discount}% OFF
+            </span>
+          )}
           {product.tags?.map((tag, idx) => (
             <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border backdrop-blur-sm self-start">
               {tag.text}
@@ -650,7 +734,12 @@ function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key
       </div>
       <div className="px-1">
         <h6 className="text-cream text-sm font-bold truncate mb-0.5 leading-tight">{product.name}</h6>
-        <p className="text-primary font-bold text-base">{formatCurrency(product.price)}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-primary font-bold text-base">{formatCurrency(finalPrice)}</p>
+          {hasDiscount && (
+            <p className="text-[10px] text-cream/20 line-through">{formatCurrency(product.price)}</p>
+          )}
+        </div>
       </div>
     </motion.div>
   );
