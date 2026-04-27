@@ -83,6 +83,7 @@ export default function AdminPanel() {
     features: ['Organic', 'Vegan'],
     size: '50ml, 100ml, 150ml',
     order: 0,
+    imageCurve: 40,
     tags: []
   });
 
@@ -204,6 +205,7 @@ export default function AdminPanel() {
       features: product.features || [],
       size: product.size || '50ml, 100ml, 150ml',
       order: product.order || 0,
+      imageCurve: product.imageCurve ?? 40,
       tags: product.tags || [],
       customFields: product.customFields || {},
       categories: Array.isArray(product.categories) ? product.categories : (product.category ? [product.category] : [])
@@ -228,6 +230,7 @@ export default function AdminPanel() {
       features: ['Organic', 'Vegan'],
       size: '50ml, 100ml, 150ml',
       order: products.length,
+      imageCurve: 40,
       tags: [],
       customFields: {}
     });
@@ -696,6 +699,25 @@ export default function AdminPanel() {
                     value={formData.reviewsCount}
                     onChange={(e: any) => setFormData({...formData, reviewsCount: parseInt(e.target.value) || 0})}
                   />
+                </div>
+
+                <div className="bg-background/50 border border-white/5 p-4 rounded-2xl">
+                  <div className="flex justify-between items-center mb-4">
+                    <label className="block text-[10px] font-bold text-cream/40 uppercase tracking-widest px-1">Product image Curve (Radius)</label>
+                    <span className="text-primary font-bold text-xs">{formData.imageCurve}px</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="200" 
+                    value={formData.imageCurve || 0}
+                    onChange={(e) => setFormData({...formData, imageCurve: parseInt(e.target.value)})}
+                    className="w-full h-1.5 bg-surface rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between mt-2">
+                    <span className="text-[8px] text-cream/20 font-bold uppercase tracking-widest">Sharp (0)</span>
+                    <span className="text-[8px] text-cream/20 font-bold uppercase tracking-widest">Circle/Round</span>
+                  </div>
                 </div>
 
                 <div>

@@ -14,6 +14,7 @@ export interface Product {
   features?: string[];
   size?: string;
   order?: number;
+  imageCurve?: number;
   tags?: { text: string; color: string }[];
   customFields?: Record<string, string>;
   createdAt: number;
@@ -74,6 +75,12 @@ export interface Review {
   comment: string;
   date: string;
   createdAt: number;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+  selectedSize?: string;
+  imageCurve?: number;
 }
 
 export interface HomeSection {

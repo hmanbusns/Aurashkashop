@@ -5,11 +5,35 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { ref, set, get, update, push } from 'firebase/database';
+import { ref, set, get, update, push, onValue, off } from 'firebase/database';
 import { auth, db } from '../lib/firebase';
 import { UserProfile, Address } from '../types';
 
 export const AuthService = {
+  // ... existing methods ...
+  
+  onProfileSync(uid: string, callback: (profile: UserProfile | null) => void) {
+    const userRef = ref(db, `users/${uid}`);
+    const unsubscribe = onValue(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.addresses) {
+          data.addresses = Object.entries(data.addresses).map(([id, addr]: [string, any]) => ({
+            ...addr,
+            id
+          }));
+        } else {
+          data.addresses = [];
+        }
+        callback(data as UserProfile);
+      } else {
+        callback(null);
+      }
+    });
+
+    return unsubscribe;
+  },
+
   async signup(email: string, password: string, displayName: string, phone: string) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;

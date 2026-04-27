@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, ShoppingBag, MapPin, CreditCard, Heart, Settings, 
   HelpCircle, LogOut, ChevronRight, User as UserIcon, Shield,
-  Home, Grid, Trash2, Edit2, Plus
+  Home, Grid, Trash2, Edit2, Plus, X, Phone
 } from 'lucide-react';
 import { UserProfile, Address } from '../types';
 import { AuthService } from '../services/authService';
@@ -13,9 +13,37 @@ import { Shimmer } from '../components/Shimmer';
 
 export default function ProfilePage({ user: initialUser }: { user: UserProfile | null }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({ displayName: '', phone: '' });
+
+  React.useEffect(() => {
+    setUser(initialUser);
+    if (initialUser) {
+      setEditFormData({ 
+        displayName: initialUser.displayName || '', 
+        phone: initialUser.phone || '' 
+      });
+    }
+  }, [initialUser]);
+
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const navigate = useNavigate();
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setIsUpdating(true);
+    try {
+      await AuthService.updateUserProfile(user.uid, editFormData);
+      setShowEditModal(false);
+    } catch (error) {
+      console.error("Profile update failed", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleEditAddress = (addr: Address) => {
     // This is handled by triggering LocationPicker with specific state 
@@ -67,9 +95,81 @@ export default function ProfilePage({ user: initialUser }: { user: UserProfile |
             )}
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-cream mb-1">{user?.displayName || 'Hello, Guest'}</h2>
+        <h2 className="text-2xl font-bold text-cream mb-1 flex items-center gap-2">
+          {user?.displayName || 'Hello, Guest'}
+          {user && (
+            <button onClick={() => setShowEditModal(true)} className="p-1 hover:text-primary transition-colors">
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </h2>
         <p className="text-primary text-sm font-medium">{user?.email || 'Sign in to sync your data'}</p>
+        {(user?.phone && user.phone !== '') && <p className="text-cream/30 text-[10px] mt-1 uppercase tracking-widest font-bold">{user.phone}</p>}
       </div>
+
+      <AnimatePresence>
+        {showEditModal && user && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowEditModal(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-background border border-white/10 rounded-[32px] overflow-hidden p-8 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-serif font-bold text-cream">Edit Profile</h3>
+                <button onClick={() => setShowEditModal(false)} className="p-2 text-cream/20 hover:text-cream transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateProfile} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-cream/40 uppercase tracking-widest ml-2">Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cream/20" />
+                    <input 
+                      type="text"
+                      required
+                      value={editFormData.displayName}
+                      onChange={e => setEditFormData({...editFormData, displayName: e.target.value})}
+                      className="w-full bg-surface/50 border border-white/5 rounded-2xl p-4 pl-11 text-cream text-sm outline-none focus:border-primary/50 transition-all font-medium"
+                      placeholder="Your name"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-cream/40 uppercase tracking-widest ml-2">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cream/20" />
+                    <input 
+                      type="tel"
+                      required
+                      value={editFormData.phone}
+                      onChange={e => setEditFormData({...editFormData, phone: e.target.value})}
+                      className="w-full bg-surface/50 border border-white/5 rounded-2xl p-4 pl-11 text-cream text-sm outline-none focus:border-primary/50 transition-all font-medium"
+                      placeholder="Your phone number"
+                    />
+                  </div>
+                </div>
+                <button 
+                  type="submit"
+                  disabled={isUpdating}
+                  className="w-full bg-primary text-background font-bold py-4.5 rounded-2xl shadow-xl shadow-primary/20 disabled:opacity-50 mt-4 text-[10px] uppercase tracking-[0.2em]"
+                >
+                  {isUpdating ? 'Updating...' : 'Save Changes'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="px-6 mb-8">
         <div className="flex items-center justify-between mb-4">

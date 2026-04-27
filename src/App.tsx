@@ -28,13 +28,24 @@ export default function App() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let profileUnsubscribe: (() => void) | null = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          const profile = await AuthService.getUserProfile(firebaseUser.uid);
-          setUser(profile);
+          // One-time initial fetch
+          const initialProfile = await AuthService.getUserProfile(firebaseUser.uid);
+          setUser(initialProfile);
           setAuthStatus('authenticated');
+
+          // Set up real-time listener
+          if (profileUnsubscribe) profileUnsubscribe();
+          profileUnsubscribe = AuthService.onProfileSync(firebaseUser.uid, (updatedProfile) => {
+            setUser(updatedProfile);
+          });
         } else {
+          if (profileUnsubscribe) profileUnsubscribe();
+          profileUnsubscribe = null;
           setUser(null);
           setAuthStatus('unauthenticated');
         }
@@ -54,7 +65,8 @@ export default function App() {
     }, 10000);
 
     return () => {
-      unsubscribe();
+      authUnsubscribe();
+      if (profileUnsubscribe) profileUnsubscribe();
       clearTimeout(timeout);
     };
   }, []);
@@ -105,7 +117,7 @@ export default function App() {
         />
         <Route 
           path="/checkout" 
-          element={authStatus === 'authenticated' ? <CheckoutPage /> : <Navigate to="/login" />} 
+          element={authStatus === 'authenticated' ? <CheckoutPage user={user} /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/orders" 

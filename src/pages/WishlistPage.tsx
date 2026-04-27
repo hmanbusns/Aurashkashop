@@ -104,7 +104,8 @@ export default function WishlistPage() {
               className="bg-surface/30 border border-white/5 rounded-2xl p-3 flex gap-3"
             >
               <div 
-                className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+                className="w-20 h-20 overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+                style={{ borderRadius: `${Math.min((item.imageCurve ?? 24) / 1.5, 40)}px` }}
                 onClick={() => navigate(`/product/${item.id}`)}
               >
                 <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />

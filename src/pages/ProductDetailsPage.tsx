@@ -14,7 +14,7 @@ export default function ProductDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState('');
+  const [imageIndex, setImageIndex] = useState(0);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [productReviews, setProductReviews] = useState<Review[]>([]);
@@ -26,7 +26,7 @@ export default function ProductDetailsPage() {
         const data = await DatabaseService.getProduct(id);
         setProduct(data);
         if (data) {
-          setActiveImage(data.imageUrl);
+          setImageIndex(0);
           const sizes = data.size?.split(',').map(s => s.trim()) || [];
           if (sizes.length > 0) setSelectedSize(sizes[0]);
 
@@ -93,6 +93,24 @@ export default function ProductDetailsPage() {
   }
 
   const allImages = [product.imageUrl, ...(product.additionalImages || [])];
+  const activeImage = allImages[imageIndex] || '';
+
+  const handleNextImage = () => {
+    if (imageIndex < allImages.length - 1) {
+      setImageIndex(prev => prev + 1);
+    } else {
+      setImageIndex(0);
+    }
+  };
+
+  const handlePrevImage = () => {
+    if (imageIndex > 0) {
+      setImageIndex(prev => prev - 1);
+    } else {
+      setImageIndex(allImages.length - 1);
+    }
+  };
+
   const sizes = product.size?.split(',').map(s => s.trim()) || ['50ml', '100ml', '150ml'];
 
   return (
@@ -115,29 +133,57 @@ export default function ProductDetailsPage() {
       </header>
 
       <div className="px-6 space-y-6">
-        {/* Product Image */}
-        <div className="relative aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
+        {/* Product Image Gallery */}
+        <div 
+          className="relative aspect-[4/5] w-full overflow-hidden border border-white/5 shadow-2xl bg-surface/10"
+          style={{ borderRadius: `${product.imageCurve ?? 40}px` }}
+        >
           <AnimatePresence mode="wait">
-            <motion.img 
-              key={activeImage}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              src={activeImage} 
-              alt={product.name} 
-              className="w-full h-full object-cover"
-            />
+            <motion.div
+              key={imageIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -50) handleNextImage();
+                else if (info.offset.x > 50) handlePrevImage();
+              }}
+            >
+              <img 
+                src={activeImage} 
+                alt={product.name} 
+                className="w-full h-full object-contain p-4"
+              />
+            </motion.div>
           </AnimatePresence>
-          
-          {/* Thumbnails */}
+
+          {/* Swipe Indicators */}
           {allImages.length > 1 && (
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 px-6 overflow-x-auto no-scrollbar">
-              {allImages.map((img, idx) => (
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 px-4">
+              {allImages.map((_, idx) => (
+                <div 
+                  key={idx}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    imageIndex === idx ? 'w-4 bg-primary' : 'w-1 bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Thumbnails (Optional scroll) */}
+          {allImages.length > 1 && (
+            <div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-none">
+              {allImages.slice(0, 4).map((img, idx) => (
                 <button 
                   key={idx}
-                  onClick={() => setActiveImage(img)}
-                  className={`w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0 transition-all ${
-                    activeImage === img ? 'border-primary scale-110' : 'border-white/20 opacity-50'
+                  onClick={() => setImageIndex(idx)}
+                  className={`w-10 h-10 rounded-xl overflow-hidden border-2 shrink-0 transition-all pointer-events-auto ${
+                    imageIndex === idx ? 'border-primary scale-110 shadow-lg' : 'border-white/10 opacity-40 hover:opacity-100'
                   }`}
                 >
                   <img src={img} className="w-full h-full object-cover" />

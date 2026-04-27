@@ -24,12 +24,15 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const navigate = useNavigate();
 
+  const [hasPromptedLocation, setHasPromptedLocation] = useState(false);
+
   useEffect(() => {
     setUser(initialUser);
-    if (initialUser && !initialUser.address) {
+    if (initialUser && !initialUser.address && !hasPromptedLocation) {
       setShowLocationPicker(true);
+      setHasPromptedLocation(true);
     }
-  }, [initialUser]);
+  }, [initialUser, hasPromptedLocation]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -611,7 +614,10 @@ function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key
       onClick={onClick}
       className="flex flex-col group cursor-pointer"
     >
-      <div className="relative aspect-[4/5] w-full rounded-[1.5rem] overflow-hidden mb-2 bg-surface/50 border border-white/5">
+      <div 
+        className="relative aspect-[4/5] w-full overflow-hidden mb-2 bg-surface/50 border border-white/5"
+        style={{ borderRadius: `${product.imageCurve ?? 24}px` }}
+      >
         {product.imageUrl ? (
           <img 
             src={product.imageUrl} 

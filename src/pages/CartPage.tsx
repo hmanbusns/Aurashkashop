@@ -97,7 +97,8 @@ export default function CartPage() {
               className="bg-surface/30 border border-white/5 rounded-2xl p-2.5 flex gap-3 overflow-hidden"
             >
               <div 
-                className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+                className="w-16 h-16 overflow-hidden flex-shrink-0 bg-surface cursor-pointer"
+                style={{ borderRadius: `${Math.min((item.imageCurve ?? 24) / 2, 32)}px` }}
                 onClick={() => navigate(`/product/${item.id}`)}
               >
                 <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
