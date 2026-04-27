@@ -60,8 +60,16 @@
 }
 
 .glass-card {
-  background: rgba(26, 31, 26, 0.7);
-  backdrop-filter: blur(10px);
+  background: rgba(26, 31, 26, 0.85);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  /* Force hardware acceleration for stability on some devices */
+  transform: translateZ(0);
+}
+
+.fix-glitch {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 

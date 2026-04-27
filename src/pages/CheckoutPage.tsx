@@ -37,7 +37,7 @@ export default function CheckoutPage({ user }: { user: UserProfile | null }) {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+      <header className="p-6 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-sm z-30 fix-glitch">
         <button onClick={() => step === 'success' ? navigate('/home') : navigate(-1)} className="p-2 hover:bg-surface rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>

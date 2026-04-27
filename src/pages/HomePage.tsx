@@ -100,7 +100,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-4 pt-3 pb-2 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm px-4 pt-3 pb-2 flex items-center justify-between fix-glitch">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 overflow-hidden rounded-lg flex items-center justify-center bg-white/5">
             <img 
@@ -337,7 +337,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl fix-glitch">
         <NavIcon icon={<Home className="w-5 h-5" />} active />
         <NavIcon icon={<Grid className="w-5 h-5" />} onClick={() => navigate('/categories')} />
         <NavIcon icon={<Heart className="w-5 h-5" />} onClick={() => navigate('/wishlist')} />

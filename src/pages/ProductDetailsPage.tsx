@@ -116,7 +116,7 @@ export default function ProductDetailsPage() {
   return (
     <div className="min-h-screen bg-background pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm px-6 py-4 flex items-center justify-between fix-glitch">
         <button 
           onClick={() => navigate(-1)}
           className="p-2 text-cream hover:text-primary transition-colors"

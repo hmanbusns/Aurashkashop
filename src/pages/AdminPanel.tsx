@@ -809,7 +809,7 @@ export default function AdminPanel() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditingReviewsProductId(null)}
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-background/60 backdrop-blur-[2px]"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}

@@ -114,7 +114,7 @@ export default function ProfilePage({ user: initialUser }: { user: UserProfile |
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
               onClick={() => setShowEditModal(false)}
             />
             <motion.div 
@@ -308,7 +308,7 @@ export default function ProfilePage({ user: initialUser }: { user: UserProfile |
       )}
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl fix-glitch">
         <NavIcon icon={<Home className="w-5 h-5" />} onClick={() => navigate('/home')} />
         <NavIcon icon={<Grid className="w-5 h-5" />} onClick={() => navigate('/categories')} />
         <NavIcon icon={<Heart className="w-5 h-5" />} onClick={() => navigate('/wishlist')} />

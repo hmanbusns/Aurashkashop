@@ -69,7 +69,7 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30">
+      <header className="p-6 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-sm z-30 fix-glitch">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-surface rounded-full">
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -148,7 +148,7 @@ export default function WishlistPage() {
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md border-t border-white/5 px-6 py-1.5 flex items-center justify-between mx-4 mb-2 rounded-[24px] shadow-2xl fix-glitch">
         <NavIcon icon={<Home className="w-5 h-5" />} onClick={() => navigate('/home')} />
         <NavIcon icon={<Grid className="w-5 h-5" />} onClick={() => navigate('/categories')} />
         <NavIcon icon={<Heart className="w-5 h-5" />} active />

@@ -117,7 +117,7 @@ function HorizontalProductCard({ product }: { product: Product, key?: any }) {
         />
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {product.tags?.slice(0, 1).map((tag, idx) => (
-            <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border backdrop-blur-sm shadow-sm">
+            <span key={idx} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className="px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest border backdrop-blur-[2px] shadow-sm">
               {tag.text}
             </span>
           ))}

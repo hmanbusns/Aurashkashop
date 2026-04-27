@@ -221,7 +221,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ user, isOpen, on
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
         onClick={onClose}
       />
       
@@ -252,7 +252,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ user, isOpen, on
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute inset-0 z-[110] bg-background/95 backdrop-blur-md flex items-center justify-center p-8 text-center"
+                className="absolute inset-0 z-[110] bg-background/95 backdrop-blur-sm flex items-center justify-center p-8 text-center fix-glitch"
               >
                 <div className="space-y-6">
                   <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
