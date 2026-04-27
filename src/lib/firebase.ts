@@ -3,22 +3,18 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyAPPZgVrZF9SEaS42xx8RcsnM2i8EpenUQ",
+  authDomain: "creadit-loan-5203b.firebaseapp.com",
+  databaseURL: "https://creadit-loan-5203b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "creadit-loan-5203b",
+  storageBucket: "creadit-loan-5203b.appspot.com",
+  messagingSenderId: "95634892627",
+  appId: "1:95634892627:web:1500052cb60f3b7e4823a6",
+  measurementId: "G-V60FZSL5V1"
 };
 
-// Debug helper to check if config is loaded
-if (!firebaseConfig.apiKey) {
-  console.warn("⚠️ Firebase configuration missing! Please ensure you have set the secrets in the AI Studio Secrets panel.");
-}
-
 const app = initializeApp(firebaseConfig);
+
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 export default app;

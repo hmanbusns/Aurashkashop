@@ -42,24 +42,29 @@ export default function App() {
       }
     });
 
-    // Timeout for safety - if auth doesn't respond in 5s, assume unauthenticated
     const timeout = setTimeout(() => {
-      if (authStatus === 'loading') {
-        console.warn("Auth initialization timed out");
-        setAuthStatus('unauthenticated');
-      }
+      setAuthStatus(prev => {
+        if (prev === 'loading') {
+          return 'unauthenticated';
+        }
+        return prev;
+      });
     }, 10000);
 
     return () => {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, [authStatus]);
+  }, []);
 
   if (authStatus === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#0D110D] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-12 h-12 border-4 border-[#6B7D3F] border-t-transparent rounded-full animate-spin"></div>
+        <div className="mt-8">
+          <h1 className="text-2xl font-serif text-[#6B7D3F] italic uppercase tracking-widest mb-2">Aurashka</h1>
+          <p className="text-cream/40 text-xs animate-pulse">Initializing natural beauty journey...</p>
+        </div>
       </div>
     );
   }
