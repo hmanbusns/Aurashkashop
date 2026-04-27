@@ -42,6 +42,7 @@ export interface BannerConfig {
 }
 
 export interface Address {
+  id?: string;
   fullName: string;
   phone: string;
   email: string;
@@ -56,11 +57,12 @@ export interface UserProfile {
   uid: string;
   displayName: string;
   email: string;
-  phone: string;
+  phone?: string;
   role: 'user' | 'admin';
   createdAt: number;
   avatarUrl?: string;
-  address?: Address;
+  address?: Address | null;
+  addresses?: Address[];
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';

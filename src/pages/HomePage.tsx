@@ -10,6 +10,7 @@ import { DatabaseService } from '../services/databaseService';
 import { AuthService } from '../services/authService';
 import { formatCurrency } from '../lib/format';
 import { LocationPicker } from '../components/LocationPicker';
+import { Shimmer, ProductShimmer, CategoryShimmer } from '../components/Shimmer';
 
 export default function HomePage({ user: initialUser }: { user: UserProfile | null }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
@@ -99,7 +100,12 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-4 pt-3 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 overflow-hidden rounded-lg flex items-center justify-center bg-white/5">
-            <img src="https://i.ibb.co/vxKFtvqB/20241130-231344.png" className="w-full h-full object-contain" alt="Aurashka Logo" />
+            <img 
+              src="https://i.ibb.co/vxKFtvqB/20241130-231344.png" 
+              className="w-full h-full object-contain" 
+              alt="Aurashka Logo" 
+              loading="lazy"
+            />
           </div>
           <h1 className="text-lg font-serif text-primary uppercase tracking-widest font-bold">Aurashka</h1>
         </div>
@@ -191,6 +197,7 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
             alt="nature" 
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
             referrerPolicy="no-referrer"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent flex flex-col justify-center p-6">
             <h4 className="text-2xl font-serif text-cream mb-2 max-w-[200px] leading-tight font-bold">
@@ -212,48 +219,68 @@ export default function HomePage({ user: initialUser }: { user: UserProfile | nu
       {/* Categories Chips */}
       <section className="px-4 mb-5 overflow-x-auto no-scrollbar">
         <div className="flex gap-4 pb-1">
-          {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
-            <button 
-              key={cat.id}
-              onClick={() => navigate(`/search?category=${encodeURIComponent(cat.name)}`)}
-              className="flex flex-col items-center gap-2 shrink-0 group"
-            >
-              <div 
-                className="bg-surface rounded-full flex items-center justify-center overflow-hidden border border-white/5 transition-all group-hover:scale-110 group-hover:border-primary/30"
-                style={{ 
-                  width: cat.imageSize ? `${parseInt(cat.imageSize) * 0.8}px` : '40px', 
-                  height: cat.imageSize ? `${parseInt(cat.imageSize) * 0.8}px` : '40px' 
-                }}
+          {loading ? (
+            [...Array(6)].map((_, i) => <CategoryShimmer key={i} />)
+          ) : (
+            [...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map((cat) => (
+              <button 
+                key={cat.id}
+                onClick={() => navigate(`/search?category=${encodeURIComponent(cat.name)}`)}
+                className="flex flex-col items-center gap-2 shrink-0 group"
               >
-                {cat.imageUrl ? (
-                  <div className="w-full h-full flex items-center justify-center p-1">
-                    <img 
-                      src={cat.imageUrl} 
-                      className="max-w-full max-h-full object-contain" 
-                      alt={cat.name} 
-                    />
-                  </div>
-                ) : (
-                  <LayoutGrid className="text-cream/10" style={{ width: '50%', height: '50%' }} />
-                )}
-              </div>
-              <span 
-                className="font-bold uppercase tracking-widest whitespace-nowrap"
-                style={{ 
-                  fontSize: cat.textSize ? `${parseInt(cat.textSize) * 0.9}px` : '8px',
-                  color: cat.textColor || 'rgba(255, 253, 237, 0.4)'
-                }}
-              >
-                {cat.name}
-              </span>
-            </button>
-          ))}
+                <div 
+                  className="bg-surface rounded-full flex items-center justify-center overflow-hidden border border-white/5 transition-all group-hover:scale-110 group-hover:border-primary/30"
+                  style={{ 
+                    width: cat.imageSize ? `${parseInt(cat.imageSize) * 0.8}px` : '40px', 
+                    height: cat.imageSize ? `${parseInt(cat.imageSize) * 0.8}px` : '40px' 
+                  }}
+                >
+                  {cat.imageUrl ? (
+                    <div className="w-full h-full flex items-center justify-center p-1">
+                      <img 
+                        src={cat.imageUrl} 
+                        className="max-w-full max-h-full object-contain" 
+                        alt={cat.name} 
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <LayoutGrid className="text-cream/10" style={{ width: '50%', height: '50%' }} />
+                  )}
+                </div>
+                <span 
+                  className="font-bold uppercase tracking-widest whitespace-nowrap"
+                  style={{ 
+                    fontSize: cat.textSize ? `${parseInt(cat.textSize) * 0.9}px` : '8px',
+                    color: cat.textColor || 'rgba(255, 253, 237, 0.4)'
+                  }}
+                >
+                  {cat.name}
+                </span>
+              </button>
+            ))
+          )}
         </div>
       </section>
 
       {/* Dynamic Sections */}
       <div className="space-y-6">
-        {homeSections.length > 0 ? (
+        {loading ? (
+          <div className="px-4 space-y-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Shimmer width="150px" height="24px" />
+                <div className="flex gap-3 overflow-hidden">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="min-w-[140px]">
+                      <ProductShimmer />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : homeSections.length > 0 ? (
           homeSections.map(section => {
             let sectionProducts: Product[] = [];
             if (section.dataSource === 'all') {
@@ -356,6 +383,7 @@ function ManualSection({
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                 alt={p.name}
                 referrerPolicy="no-referrer"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
               
@@ -403,6 +431,7 @@ function ManualSection({
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                 alt={p.name}
                 referrerPolicy="no-referrer"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent p-6 flex flex-col justify-center">
                  <div className="flex gap-1 mb-1.5">
@@ -500,7 +529,7 @@ function CategorySection({
                  />
                ) : (
                  p.imageUrl ? (
-                   <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                   <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
                  ) : (
                    <div className="absolute inset-0 flex items-center justify-center bg-surface">
                      <Grid className="w-6 h-6 text-cream/10" />
@@ -541,7 +570,7 @@ function CategorySection({
               className="relative h-36 rounded-[24px] overflow-hidden group cursor-pointer border border-white/5"
             >
               {p.imageUrl ? (
-                <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" loading="lazy" />
               ) : (
                 <div className="absolute inset-0 bg-surface flex items-center justify-center">
                    <Grid className="w-6 h-6 text-cream/10" />
@@ -589,6 +618,7 @@ function ProductCard({ product, onClick, isWishlisted, onToggleWishlist }: { key
             alt={product.name} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             referrerPolicy="no-referrer"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

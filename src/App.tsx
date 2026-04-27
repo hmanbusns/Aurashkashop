@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import { AuthService } from './services/authService';
 import { UserProfile, AuthStatus } from './types';
+import { PageShimmer } from './components/Shimmer';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -20,6 +21,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import AboutUsPage from './pages/AboutUsPage';
 import ContactUsPage from './pages/ContactUsPage';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -58,15 +60,7 @@ export default function App() {
   }, []);
 
   if (authStatus === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#0D110D] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-12 h-12 border-4 border-[#6B7D3F] border-t-transparent rounded-full animate-spin"></div>
-        <div className="mt-8">
-          <h1 className="text-2xl font-serif text-[#6B7D3F] italic uppercase tracking-widest mb-2">Aurashka</h1>
-          <p className="text-cream/40 text-xs animate-pulse">Initializing natural beauty journey...</p>
-        </div>
-      </div>
-    );
+    return <PageShimmer />;
   }
 
   return (
@@ -124,6 +118,10 @@ export default function App() {
         <Route 
           path="/contact" 
           element={<ContactUsPage />} 
+        />
+        <Route 
+          path="/settings" 
+          element={<SettingsPage />} 
         />
         <Route 
           path="/admin" 

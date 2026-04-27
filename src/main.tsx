@@ -2,13 +2,16 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { ThemeProvider } from './context/ThemeContext.tsx';
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
   try {
     createRoot(rootElement).render(
       <StrictMode>
-        <App />
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
       </StrictMode>,
     );
   } catch (error) {
